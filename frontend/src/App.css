@@ -1,0 +1,22 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.tagline {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #4b5563;
+}
+
+.description {
+  margin: 0;
+  max-width: 40rem;
+  line-height: 1.6;
+}
