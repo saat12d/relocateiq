@@ -3,20 +3,23 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 2rem;
+  gap: 2rem;
+  padding: 3rem 1.5rem;
+}
+
+.app-header {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.app-header h1 {
+  margin: 0;
 }
 
 .tagline {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: #4b5563;
-}
-
-.description {
-  margin: 0;
-  max-width: 40rem;
-  line-height: 1.6;
 }
