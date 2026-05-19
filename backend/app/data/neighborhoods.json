@@ -1,0 +1,182 @@
+[
+  {
+    "id": "westwood",
+    "name": "Westwood",
+    "city": "Los Angeles",
+    "state": "CA",
+    "center": { "lat": 34.0635, "lng": -118.4455 },
+    "median_rent_2br": 3200,
+    "description": "Walkable area adjacent to UCLA with student housing, restaurants, and the Westwood Village."
+  },
+  {
+    "id": "santa-monica",
+    "name": "Santa Monica",
+    "city": "Santa Monica",
+    "state": "CA",
+    "center": { "lat": 34.0195, "lng": -118.4912 },
+    "median_rent_2br": 3800,
+    "description": "Beachside city with the pier, Third Street Promenade, and a strong tech presence."
+  },
+  {
+    "id": "venice",
+    "name": "Venice",
+    "city": "Los Angeles",
+    "state": "CA",
+    "center": { "lat": 33.9850, "lng": -118.4695 },
+    "median_rent_2br": 3600,
+    "description": "Eclectic beach neighborhood with the boardwalk, canals, and Abbot Kinney shopping."
+  },
+  {
+    "id": "culver-city",
+    "name": "Culver City",
+    "city": "Culver City",
+    "state": "CA",
+    "center": { "lat": 34.0211, "lng": -118.3965 },
+    "median_rent_2br": 3100,
+    "description": "Studio town turned tech hub, home to Sony Pictures and Apple's West Coast offices."
+  },
+  {
+    "id": "mar-vista",
+    "name": "Mar Vista",
+    "city": "Los Angeles",
+    "state": "CA",
+    "center": { "lat": 34.0019, "lng": -118.4310 },
+    "median_rent_2br": 2900,
+    "description": "Quiet residential pocket between Venice and Culver City with a popular farmers market."
+  },
+  {
+    "id": "playa-vista",
+    "name": "Playa Vista",
+    "city": "Los Angeles",
+    "state": "CA",
+    "center": { "lat": 33.9756, "lng": -118.4250 },
+    "median_rent_2br": 3500,
+    "description": "Modern planned community on the Westside, nicknamed 'Silicon Beach'."
+  },
+  {
+    "id": "west-la",
+    "name": "West Los Angeles",
+    "city": "Los Angeles",
+    "state": "CA",
+    "center": { "lat": 34.0444, "lng": -118.4452 },
+    "median_rent_2br": 2950,
+    "description": "Dense residential area between the 405 and Westwood, mix of apartments and small businesses."
+  },
+  {
+    "id": "brentwood",
+    "name": "Brentwood",
+    "city": "Los Angeles",
+    "state": "CA",
+    "center": { "lat": 34.0526, "lng": -118.4744 },
+    "median_rent_2br": 3700,
+    "description": "Upscale residential area north of Wilshire with San Vicente's shops and restaurants."
+  },
+  {
+    "id": "beverly-hills",
+    "name": "Beverly Hills",
+    "city": "Beverly Hills",
+    "state": "CA",
+    "center": { "lat": 34.0736, "lng": -118.4004 },
+    "median_rent_2br": 4200,
+    "description": "Affluent city wrapped by LA, known for Rodeo Drive and quiet residential streets."
+  },
+  {
+    "id": "west-hollywood",
+    "name": "West Hollywood",
+    "city": "West Hollywood",
+    "state": "CA",
+    "center": { "lat": 34.0900, "lng": -118.3617 },
+    "median_rent_2br": 3500,
+    "description": "Walkable nightlife and restaurant hub between Beverly Hills and Hollywood."
+  },
+  {
+    "id": "hollywood",
+    "name": "Hollywood",
+    "city": "Los Angeles",
+    "state": "CA",
+    "center": { "lat": 34.0928, "lng": -118.3287 },
+    "median_rent_2br": 2700,
+    "description": "Tourist landmarks plus a dense mix of older apartments and new mid-rises."
+  },
+  {
+    "id": "los-feliz",
+    "name": "Los Feliz",
+    "city": "Los Angeles",
+    "state": "CA",
+    "center": { "lat": 34.1085, "lng": -118.2942 },
+    "median_rent_2br": 2900,
+    "description": "Hillside neighborhood next to Griffith Park, popular with creatives."
+  },
+  {
+    "id": "silver-lake",
+    "name": "Silver Lake",
+    "city": "Los Angeles",
+    "state": "CA",
+    "center": { "lat": 34.0869, "lng": -118.2702 },
+    "median_rent_2br": 2850,
+    "description": "Hip Eastside neighborhood around the Silver Lake Reservoir with strong coffee and music scenes."
+  },
+  {
+    "id": "echo-park",
+    "name": "Echo Park",
+    "city": "Los Angeles",
+    "state": "CA",
+    "center": { "lat": 34.0782, "lng": -118.2606 },
+    "median_rent_2br": 2600,
+    "description": "Lake-centered neighborhood between downtown and Silver Lake."
+  },
+  {
+    "id": "downtown-la",
+    "name": "Downtown LA",
+    "city": "Los Angeles",
+    "state": "CA",
+    "center": { "lat": 34.0407, "lng": -118.2468 },
+    "median_rent_2br": 2900,
+    "description": "Arts District lofts, historic core high-rises, and most of the rail network."
+  },
+  {
+    "id": "koreatown",
+    "name": "Koreatown",
+    "city": "Los Angeles",
+    "state": "CA",
+    "center": { "lat": 34.0577, "lng": -118.3009 },
+    "median_rent_2br": 2400,
+    "description": "Dense and central, 24-hour food scene, two Metro lines."
+  },
+  {
+    "id": "mid-city",
+    "name": "Mid-City",
+    "city": "Los Angeles",
+    "state": "CA",
+    "center": { "lat": 34.0479, "lng": -118.3422 },
+    "median_rent_2br": 2500,
+    "description": "Geographic middle of LA, mix of single-family and apartments, served by the K Line."
+  },
+  {
+    "id": "miracle-mile",
+    "name": "Miracle Mile",
+    "city": "Los Angeles",
+    "state": "CA",
+    "center": { "lat": 34.0625, "lng": -118.3535 },
+    "median_rent_2br": 2900,
+    "description": "Wilshire corridor with LACMA and the future Purple Line stations."
+  },
+  {
+    "id": "pasadena",
+    "name": "Pasadena",
+    "city": "Pasadena",
+    "state": "CA",
+    "center": { "lat": 34.1478, "lng": -118.1445 },
+    "median_rent_2br": 2950,
+    "description": "Old Town shops, Caltech, and Gold Line access; quieter pace than central LA."
+  },
+  {
+    "id": "long-beach-downtown",
+    "name": "Downtown Long Beach",
+    "city": "Long Beach",
+    "state": "CA",
+    "center": { "lat": 33.7701, "lng": -118.1937 },
+    "median_rent_2br": 2400,
+    "description": "Waterfront downtown with the Blue Line terminus, cheaper than the Westside."
+  }
+]
