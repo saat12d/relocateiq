@@ -11,9 +11,115 @@ Public interface:
     verify_password(plain_password, hash) -> bool
     create_access_token(user_id)          -> JWT string
     decode_access_token(token)            -> user_id (UUID string)
+    InvalidTokenError                     -> exception raised by decode_access_token
  
 Anything not in that list is a private implementation detail.
 
 This file will not handle requests, does not talk to the database, and does not "log anyone in." It will just provide the four building blocks for the login flow.
 """
 
+import os
+from datetime import datetime, timedelta, timezone
+
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+
+# --- Private configuration (implementation details, not part of the interface) ---
+ 
+# Passlib's CryptContext handles the choice of hashing algorithm, salt
+# generation, and the algorithm-versioning needed if we ever rotate.
+# Marking bcrypt as the only "scheme" keeps things simple for now. We may add argon2 later so setting it up this way prevents us from breaking existing hashes.
+_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+ 
+# JWT signing secret. Loaded from the environment so the secret never lives in source control. The backend will refuse to start if it isn't set, because shipping with a default secret is a serious security mistake.
+# What is JWT (JSON Web Token): compact, self contained way to securely transmit information between parties as a signed token
+_JWT_SECRET = os.getenv("JWT_SECRET")
+if not _JWT_SECRET:
+    raise RuntimeError(
+        "JWT_SECRET is not set. Add it to backend/.env (any long random "
+        "string for local dev; a secure secret in production)."
+    )
+ 
+# HS256 is symmetric (one shared secret)
+_JWT_ALGORITHM = "HS256"
+
+# Token lifetime. 60 minutes
+_ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+# --- Public interface ---
+
+# used for exceptions
+class InvalidTokenError(Exception):
+    """
+    Raised when a token cannot be trusted for any reason: bad signature,
+    expired, malformed, or missing required claims.
+ 
+    We need this function because:
+    1. Hiding jose's exception class from the rest of the codebase (information hiding, value today)
+    2. Giving us a clearly-named, project-owned exception (readability, value today)
+    3. Unifying jose errors with our own validation errors under one exception type (clean API, value today)
+    """
+
+def hash_password(plain_password: str) -> str:
+    """
+    Hash a plaintext password using bcrypt.
+ 
+    Bcrypt automatically generates a unique salt per call and embeds it in
+    the output, so two users with the same password produce different hashes.
+    The result is safe to store directly in the database; it cannot be
+    reversed back into the original password.
+    """
+    return _pwd_context.hash(plain_password)
+ 
+ 
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """
+    Check whether a plaintext password matches a previously-hashed one.
+ 
+    Returns True if it matches, False otherwise. Never raises on a bad
+    password — callers should treat False the same way they'd treat
+    "no such user," to avoid leaking information about which usernames exist.
+    """
+    return _pwd_context.verify(plain_password, hashed_password)
+ 
+ 
+def create_access_token(user_id: str) -> str:
+    """
+    Mint a signed JWT identifying the given user.
+ 
+    The token's payload contains:
+        - sub: the user's id (JWT convention for "subject")
+        - exp: the expiry timestamp
+        - iat: the time the token was issued (useful for debugging)
+ 
+    Callers receive an opaque string. They should not parse it themselves;
+    use decode_access_token() to read it back.
+    """
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": str(user_id),
+        "iat": now,
+        "exp": now + timedelta(minutes=_ACCESS_TOKEN_EXPIRE_MINUTES),
+    }
+    return jwt.encode(payload, _JWT_SECRET, algorithm=_JWT_ALGORITHM)
+ 
+def decode_access_token(token: str) -> str:
+    """
+    Verify a JWT and return the user id it identifies.
+ 
+    Raises InvalidTokenError if the token is malformed, has a bad signature,
+    is expired, or is otherwise unusable. Callers should treat any exception
+    here as "this request is unauthenticated" and respond with 401.
+    """
+    try:
+        payload = jwt.decode(token, _JWT_SECRET, algorithms=[_JWT_ALGORITHM])
+    except JWTError as exc:
+        raise InvalidTokenError(str(exc)) from exc
+ 
+    user_id = payload.get("sub")
+    if not user_id:
+        # A token with no subject is structurally valid but semantically
+        # useless; treat it the same as a forgery.
+        raise InvalidTokenError("Token has no subject claim.")
+    return user_id
+ 
