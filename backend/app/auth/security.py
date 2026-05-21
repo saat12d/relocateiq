@@ -3,7 +3,7 @@ Security primitives for the auth module.
  
 This module is the single source of truth for two design decisions that are likely to change someday:
  
-    1. How we hash passwords (currently bcrypt via passlib).
+    1. How we hash passwords (currently bcrypt, called directly).
     2. How we issue and verify session tokens (currently JWTs via python-jose).
  
 Public interface:
@@ -20,16 +20,14 @@ This file will not handle requests, does not talk to the database, and does not 
 
 import os
 from datetime import datetime, timedelta, timezone
-
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+from dotenv import load_dotenv
+
+# Load variables from backend/.env into the environment before we read them.
+load_dotenv()
 
 # --- Private configuration (implementation details, not part of the interface) ---
- 
-# Passlib's CryptContext handles the choice of hashing algorithm, salt
-# generation, and the algorithm-versioning needed if we ever rotate.
-# Marking bcrypt as the only "scheme" keeps things simple for now. We may add argon2 later so setting it up this way prevents us from breaking existing hashes.
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
  
 # JWT signing secret. Loaded from the environment so the secret never lives in source control. The backend will refuse to start if it isn't set, because shipping with a default secret is a serious security mistake.
 # What is JWT (JSON Web Token): compact, self contained way to securely transmit information between parties as a signed token
@@ -63,24 +61,31 @@ class InvalidTokenError(Exception):
 def hash_password(plain_password: str) -> str:
     """
     Hash a plaintext password using bcrypt.
- 
+
     Bcrypt automatically generates a unique salt per call and embeds it in
     the output, so two users with the same password produce different hashes.
     The result is safe to store directly in the database; it cannot be
     reversed back into the original password.
+
+    Note: bcrypt only uses the first 72 bytes of a password. Passwords longer
+    than this should be rejected at the validation layer (in schemas.py).
     """
-    return _pwd_context.hash(plain_password)
+    password_bytes = plain_password.encode("utf-8")
+    hashed_bytes = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
+    return hashed_bytes.decode("utf-8")
  
  
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Check whether a plaintext password matches a previously-hashed one.
- 
+
     Returns True if it matches, False otherwise. Never raises on a bad
     password — callers should treat False the same way they'd treat
     "no such user," to avoid leaking information about which usernames exist.
     """
-    return _pwd_context.verify(plain_password, hashed_password)
+    password_bytes = plain_password.encode("utf-8")
+    hashed_bytes = hashed_password.encode("utf-8")
+    return bcrypt.checkpw(password_bytes, hashed_bytes)
  
  
 def create_access_token(user_id: str) -> str:
