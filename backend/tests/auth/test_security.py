@@ -33,7 +33,6 @@ from app.auth.security import (
 
 # --- Password hashing tests ---
 
-
 def test_hash_password_does_not_return_plaintext():
     """The stored hash must never be the original password."""
     password = "correct horse battery staple"
@@ -42,19 +41,16 @@ def test_hash_password_does_not_return_plaintext():
     # bcrypt hashes start with a recognizable prefix
     assert hashed.startswith("$2")
 
-
 def test_verify_password_accepts_correct_password():
     """A password verifies against its own hash."""
     password = "s3cur3-p@ssw0rd"
     hashed = hash_password(password)
     assert verify_password(password, hashed) is True
 
-
 def test_verify_password_rejects_wrong_password():
     """A different password must not verify."""
     hashed = hash_password("the right password")
     assert verify_password("the wrong password", hashed) is False
-
 
 def test_same_password_produces_different_hashes():
     """
@@ -68,3 +64,20 @@ def test_same_password_produces_different_hashes():
     assert hash_a != hash_b
     assert verify_password(password, hash_a) is True
     assert verify_password(password, hash_b) is True
+
+
+# --- Token creation ---
+
+def test_token_round_trips():
+    """A token we create should decode back to the same user id."""
+    user_id = str(uuid.uuid4())
+    token = create_access_token(user_id)
+    decoded_user_id = decode_access_token(token)
+    assert decoded_user_id == user_id
+
+
+def test_token_is_an_opaque_string():
+    """create_access_token returns a non-empty string."""
+    token = create_access_token("some-user-id")
+    assert isinstance(token, str)
+    assert len(token) > 0
