@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
 
-from app.routers import commute, neighborhoods  # noqa: E402  (import after load_dotenv)
+from app.routers import commute, neighborhoods, scenarios  # noqa: E402
 
 app = FastAPI(
     title="RelocateIQ API",
@@ -24,6 +24,7 @@ app.add_middleware(
 
 app.include_router(commute.router)
 app.include_router(neighborhoods.router)
+app.include_router(scenarios.router)
 
 
 @app.get("/health")
