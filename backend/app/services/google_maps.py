@@ -10,9 +10,10 @@ class GoogleMapsError(Exception):
     pass
 
 
-async def get_drive_time(
+async def get_travel_time(
     origin: str,
     destination: str,
+    mode: str = "driving",
     departure_time: Optional[int] = None,
 ) -> dict:
     """Call Google Distance Matrix for a single origin/destination pair.
@@ -28,13 +29,13 @@ async def get_drive_time(
         "origins": origin,
         "destinations": destination,
         "key": key,
-        "mode": "driving",
+        "mode": mode,
         "units": "imperial",
     }
     if departure_time is not None:
-        # Google requires either a future epoch or the literal "now" for traffic data.
         params["departure_time"] = str(departure_time)
-        params["traffic_model"] = "best_guess"
+        if mode == "driving":
+            params["traffic_model"] = "best_guess"
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         r = await client.get(DISTANCE_MATRIX_URL, params=params)
@@ -60,3 +61,24 @@ async def get_drive_time(
         "duration_in_traffic_seconds": element.get("duration_in_traffic", {}).get("value"),
         "duration_in_traffic_text": element.get("duration_in_traffic", {}).get("text"),
     }
+
+
+async def get_drive_time(
+    origin: str,
+    destination: str,
+    departure_time: Optional[int] = None,
+) -> dict:
+    return await get_travel_time(origin, destination, mode="driving", departure_time=departure_time)
+
+
+async def get_transit_time(
+    origin: str,
+    destination: str,
+    departure_time: Optional[int] = None,
+) -> dict:
+    return await get_travel_time(
+        origin,
+        destination,
+        mode="transit",
+        departure_time=departure_time,
+    )
