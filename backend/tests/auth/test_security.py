@@ -81,3 +81,56 @@ def test_token_is_an_opaque_string():
     token = create_access_token("some-user-id")
     assert isinstance(token, str)
     assert len(token) > 0
+
+
+# --- decoding tests ---
+
+def test_decode_rejects_garbage():
+    """A string that isn't a JWT at all must be rejected."""
+    with pytest.raises(InvalidTokenError):
+        decode_access_token("this is not a token")
+
+def test_decode_rejects_tampered_signature():
+    """
+    A token signed with the wrong secret must fail. We forge a token using
+    a different secret and confirm our decoder rejects it — this proves the
+    signature is actually being checked.
+    """
+    forged = jwt.encode(
+        {"sub": "attacker"},
+        "a-different-secret-than-ours",
+        algorithm=security._JWT_ALGORITHM,
+    )
+    with pytest.raises(InvalidTokenError):
+        decode_access_token(forged)
+
+def test_decode_rejects_token_without_subject():
+    """
+    A token that is validly signed but has no 'sub' claim is semantically
+    useless and must be rejected with InvalidTokenError.
+    """
+    # Sign with the REAL secret so the signature passes, but omit 'sub'.
+    no_sub = jwt.encode(
+        {"foo": "bar"},
+        security._JWT_SECRET,
+        algorithm=security._JWT_ALGORITHM,
+    )
+    with pytest.raises(InvalidTokenError):
+        decode_access_token(no_sub)
+
+def test_decode_rejects_expired_token():
+    """
+    An expired token must be rejected. We build a token that expired one
+    second ago (using the real secret) and confirm the decoder refuses it.
+    """
+    import datetime
+
+    past = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=1)
+    expired = jwt.encode(
+        {"sub": "some-user", "exp": past},
+        security._JWT_SECRET,
+        algorithm=security._JWT_ALGORITHM,
+    )
+    with pytest.raises(InvalidTokenError):
+        decode_access_token(expired)
+        
