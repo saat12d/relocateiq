@@ -5,6 +5,7 @@
 backend/.venv/
 backend/.env
 backend/__pycache__/
+backend/.pytest_cache/
 backend/**/*.pyc
 
 # Frontend
