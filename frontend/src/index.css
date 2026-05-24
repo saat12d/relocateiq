@@ -188,7 +188,8 @@ button { border: 0; }
 
 .address-field {
   display: grid;
-  grid-template-columns: 34px 1fr;
+  grid-template-columns: 46px 1fr;
+  gap: 12px;
   align-items: center;
   min-height: 58px;
   margin: 9px 0 18px;
@@ -200,7 +201,7 @@ button { border: 0; }
 .address-field__icon {
   width: 24px;
   height: 24px;
-  margin-left: 14px;
+  margin-left: 16px;
   border-radius: 8px;
   color: #fffdf8;
   background: var(--green);
