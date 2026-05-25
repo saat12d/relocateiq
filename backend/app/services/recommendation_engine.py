@@ -91,6 +91,27 @@ async def _build_recommendation(raw_zone: dict, destination: str, departure_time
     )
 
 
+def rerank_with_preferences(
+    recommendations: list[Recommendation],
+    preferences: PreferenceProfile,
+) -> list[Recommendation]:
+    relevant_minutes = (
+        lambda rec: rec.commute_analysis.transit_time_peak_minutes
+        if preferences.prefers_transit
+        else rec.commute_analysis.drive_time_peak_minutes
+    )
+    valid = [
+        rec for rec in recommendations
+        if relevant_minutes(rec) <= preferences.max_commute_minutes
+    ]
+    for rec in valid:
+        rec.total_score = _total_score(rec.commute_analysis, rec.lifestyle_analysis, preferences)
+    ranked = sorted(valid, key=lambda item: item.total_score, reverse=True)
+    for idx, item in enumerate(ranked, start=1):
+        item.rank = idx
+    return ranked
+
+
 async def analyze_zones(raw_zones: list[dict], destination: str, preferences: PreferenceProfile) -> list[Recommendation]:
     departure_time = _next_weekday_rush_hour_epoch()
     try:
