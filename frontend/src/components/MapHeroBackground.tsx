@@ -155,7 +155,11 @@ function MapHeroBackground() {
         logoPosition: "bottom-right",
       });
 
-      map.on("load", () => map && addDemoLayers(map));
+      requestAnimationFrame(() => map?.resize());
+      map.on("load", () => {
+        map?.resize();
+        map && addDemoLayers(map);
+      });
       map.on("error", () => setFailed(true));
     }
 
