@@ -21,6 +21,14 @@ class CreateScenarioRequest(BaseModel):
     max_radius_miles: float = Field(..., ge=0.5, le=50, alias="maxRadiusMiles")
 
 
+class UpdatePreferencesRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    prefers_transit: bool | None = Field(None, alias="prefersTransit")
+    avoid_highways: bool | None = Field(None, alias="avoidHighways")
+    max_commute_minutes: int | None = Field(None, ge=5, le=60, alias="maxCommuteMinutes")
+
+
 class Workplace(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
