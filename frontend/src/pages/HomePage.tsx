@@ -1,4 +1,5 @@
-import mapPreview from "../assets/home-map.png";
+import { useState } from "react";
+import MapHeroBackground from "../components/MapHeroBackground";
 
 const neighborhoods = [
   { rank: 1, name: "Highland Park", drive: "18 min", transit: "24 min", tone: "green" },
@@ -56,6 +57,8 @@ function Header() {
 }
 
 function SearchPanel() {
+  const [radius, setRadius] = useState(15);
+
   return (
     <section className="hero-card" aria-labelledby="home-title" id="start">
       <p className="eyebrow">Smarter relocation by commute</p>
@@ -76,9 +79,17 @@ function SearchPanel() {
 
         <div className="radius-row">
           <label htmlFor="radius">Search radius</label>
-          <span>15 miles</span>
+          <span>{radius} miles</span>
         </div>
-        <input id="radius" className="radius-slider" type="range" min="1" max="50" defaultValue="15" />
+        <input
+          id="radius"
+          className="radius-slider"
+          type="range"
+          min="1"
+          max="50"
+          value={radius}
+          onChange={(event) => setRadius(Number(event.target.value))}
+        />
 
         <div className="hero-actions">
           <button className="button button--dark" type="button">
@@ -140,7 +151,7 @@ function HomePage() {
       <div className="home-shell">
         <Header />
         <section className="hero-section" id="preview">
-          <img className="hero-map" src={mapPreview} alt="City map with ranked commute routes" />
+          <MapHeroBackground />
           <div className="hero-map__overlay" />
           <SearchPanel />
           <RankingPanel />
