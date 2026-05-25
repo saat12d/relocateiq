@@ -1,4 +1,4 @@
-import mapPreview from "../assets/home-map.png";
+import MapHeroBackground from "../components/MapHeroBackground";
 
 const neighborhoods = [
   { rank: 1, name: "Highland Park", drive: "18 min", transit: "24 min", tone: "green" },
@@ -140,7 +140,7 @@ function HomePage() {
       <div className="home-shell">
         <Header />
         <section className="hero-section" id="preview">
-          <img className="hero-map" src={mapPreview} alt="City map with ranked commute routes" />
+          <MapHeroBackground />
           <div className="hero-map__overlay" />
           <SearchPanel />
           <RankingPanel />

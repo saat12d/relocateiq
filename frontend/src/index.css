@@ -135,6 +135,14 @@ button { border: 0; }
   opacity: 0.9;
 }
 
+.hero-map--mapbox {
+  opacity: 1;
+}
+
+.hero-map--mapbox canvas {
+  filter: saturate(0.9) contrast(0.96);
+}
+
 .hero-map__overlay {
   background:
     linear-gradient(90deg, rgba(247, 243, 235, 0.38), rgba(247, 243, 235, 0.08) 48%, rgba(247, 243, 235, 0.34)),
