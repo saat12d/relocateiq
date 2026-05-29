@@ -299,3 +299,203 @@ async def test_update_preferences_returns_409_when_scenario_not_ranked():
 # 18 min, so that cap evicts everything and covers the empty-result branch. The
 # 409 test seeds an ANALYZING scenario straight into the repo to avoid dragging
 # the full geocoding pipeline into a state-guard check.
+
+# [GenAI Use] Prompt: "Role: senior backend test engineer fluent in pytest, FastAPI,
+# httpx ASGI transport, and pytest monkeypatch. Context: POST /api/v1/scenarios/{id}/explain
+# transitions RANKED -> EXPLAINED and fills recommendation explanationSummary via
+# generate_zone_summaries; POST /api/v1/scenarios/{id}/refine accepts userMessage,
+# calls parse_refinement, patches PreferenceProfile, re-ranks cached recommendations,
+# and returns RefineScenarioResponse with a top-level explanationSummary. Refine
+# requires EXPLAINED or SAVED; ambiguous AI input returns 422 with clarifyingPrompt;
+# OpenAI failures map to 502. Task: Add black-box integration tests that mock
+# generate_zone_summaries and parse_refinement (no live OpenAI), reuse
+# _create_ranked_scenario for setup, and cover happy paths plus 409/422/502 errors.
+# Criteria: hermetic tests, Arrange-Act-Assert, assert HTTP contract and state
+# machine preconditions, not implementation details of prompts."
+# [GenAI Use] LLM Response Start
+async def test_explain_scenario_populates_explanations(monkeypatch):
+    async def _fake_generate_zone_summaries(**kwargs):
+        recommendations = kwargs["recommendations"]
+        return [f"Explanation for {rec.zone.name}" for rec in recommendations]
+
+    monkeypatch.setattr(
+        "app.services.scenario_service.generate_zone_summaries",
+        _fake_generate_zone_summaries,
+    )
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        scenario = await _create_ranked_scenario(client)
+        scenario_id = scenario["scenarioId"]
+
+        response = await client.post(f"/api/v1/scenarios/{scenario_id}/explain")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "EXPLAINED"
+    assert payload["recommendations"][0]["explanationSummary"] != ""
+
+
+async def test_explain_scenario_returns_409_when_not_ranked():
+    from app.repositories.scenario_store import save_scenario
+    from app.schemas.scenario import (
+        PreferenceProfile,
+        ScenarioResponse,
+        ScenarioStatus,
+        Workplace,
+    )
+    from datetime import datetime, timezone
+
+    draft = ScenarioResponse(
+        scenario_id="analyzing-scenario",
+        search_radius_miles=10,
+        created_at=datetime.now(timezone.utc),
+        status=ScenarioStatus.ANALYZING,
+        workplace=Workplace(address="UCLA", latitude=34.0, longitude=-118.4),
+        preference_profile=PreferenceProfile(),
+        recommendations=[],
+    )
+    save_scenario(draft)
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        response = await client.post("/api/v1/scenarios/analyzing-scenario/explain")
+
+    assert response.status_code == 409
+
+
+async def test_refine_scenario_updates_profile_and_reranks(monkeypatch):
+    async def _fake_generate_zone_summaries(**kwargs):
+        recommendations = kwargs["recommendations"]
+        return [f"Explanation for {rec.zone.name}" for rec in recommendations]
+
+    async def _fake_parse_refinement(**kwargs):
+        return (
+            {
+                "wantsQuietArea": True,
+                "prefersTransit": True,
+                "maxCommuteMinutes": 30,
+            },
+            "I prioritized quieter neighborhoods and transit access.",
+        )
+
+    monkeypatch.setattr(
+        "app.services.scenario_service.generate_zone_summaries",
+        _fake_generate_zone_summaries,
+    )
+    monkeypatch.setattr(
+        "app.services.scenario_service.parse_refinement",
+        _fake_parse_refinement,
+    )
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        scenario = await _create_ranked_scenario(client)
+        scenario_id = scenario["scenarioId"]
+        explain_response = await client.post(f"/api/v1/scenarios/{scenario_id}/explain")
+        assert explain_response.status_code == 200
+
+        response = await client.post(
+            f"/api/v1/scenarios/{scenario_id}/refine",
+            json={"userMessage": "I prefer quieter neighborhoods and transit options."},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["explanationSummary"] != ""
+    assert payload["scenario"]["status"] == "EXPLAINED"
+    assert payload["scenario"]["preferenceProfile"]["wantsQuietArea"] is True
+    assert payload["scenario"]["preferenceProfile"]["prefersTransit"] is True
+    assert payload["scenario"]["preferenceProfile"]["maxCommuteMinutes"] == 30
+
+
+async def test_refine_scenario_returns_422_when_clarification_required(monkeypatch):
+    from app.services.ai_explanation import AIClarificationRequired
+
+    async def _fake_parse_refinement(**kwargs):
+        raise AIClarificationRequired("Can you share whether transit or driving matters most?")
+
+    monkeypatch.setattr(
+        "app.services.scenario_service.parse_refinement",
+        _fake_parse_refinement,
+    )
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        scenario = await _create_ranked_scenario(client)
+        scenario_id = scenario["scenarioId"]
+
+        from app.repositories.scenario_store import get_scenario, save_scenario
+        from app.schemas.scenario import ScenarioStatus
+
+        seeded = get_scenario(scenario_id)
+        seeded.status = ScenarioStatus.EXPLAINED
+        save_scenario(seeded)
+
+        response = await client.post(
+            f"/api/v1/scenarios/{scenario_id}/refine",
+            json={"userMessage": "Make it better"},
+        )
+
+    assert response.status_code == 422
+    assert "clarifyingPrompt" in response.json()["detail"]
+
+
+async def test_refine_scenario_returns_409_when_not_explained():
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        scenario = await _create_ranked_scenario(client)
+        scenario_id = scenario["scenarioId"]
+        response = await client.post(
+            f"/api/v1/scenarios/{scenario_id}/refine",
+            json={"userMessage": "I want quieter neighborhoods."},
+        )
+
+    assert response.status_code == 409
+
+
+async def test_refine_scenario_returns_502_on_ai_failure(monkeypatch):
+    from app.services.ai_explanation import AIExplanationError
+
+    async def _fake_parse_refinement(**kwargs):
+        raise AIExplanationError("OpenAI timeout")
+
+    monkeypatch.setattr(
+        "app.services.scenario_service.parse_refinement",
+        _fake_parse_refinement,
+    )
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        scenario = await _create_ranked_scenario(client)
+        scenario_id = scenario["scenarioId"]
+
+        from app.repositories.scenario_store import get_scenario, save_scenario
+        from app.schemas.scenario import ScenarioStatus
+
+        seeded = get_scenario(scenario_id)
+        seeded.status = ScenarioStatus.EXPLAINED
+        save_scenario(seeded)
+
+        response = await client.post(
+            f"/api/v1/scenarios/{scenario_id}/refine",
+            json={"userMessage": "Prefer transit and quieter areas."},
+        )
+
+    assert response.status_code == 502
+# [GenAI Use] LLM Response End
+# [GenAI Use] Reflection: Mocked AI at the scenario_service import path so tests stay
+# offline, just like we learned in the testability lecture. Reused _create_ranked_scenario for explain/refine setup. Kept assertions on status codes and response fields from the
+# public API contract rather than OpenAI payload shapes.

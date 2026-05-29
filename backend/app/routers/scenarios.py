@@ -3,10 +3,17 @@ from fastapi import APIRouter, HTTPException
 from app.repositories.scenario_store import get_scenario
 from app.schemas.scenario import (
     CreateScenarioRequest,
+    RefineScenarioRequest,
+    RefineScenarioResponse,
     ScenarioResponse,
     UpdatePreferencesRequest,
 )
-from app.services.scenario_service import create_scenario, update_preferences
+from app.services.scenario_service import (
+    create_scenario,
+    explain_scenario,
+    refine_scenario,
+    update_preferences,
+)
 
 router = APIRouter(prefix="/api/v1/scenarios", tags=["scenarios"])
 
@@ -29,3 +36,15 @@ async def update_scenario_preferences(
     scenario_id: str, req: UpdatePreferencesRequest
 ) -> ScenarioResponse:
     return update_preferences(scenario_id, req)
+
+
+@router.post("/{scenario_id}/explain", response_model=ScenarioResponse)
+async def explain_scenario_recommendations(scenario_id: str) -> ScenarioResponse:
+    return await explain_scenario(scenario_id)
+
+
+@router.post("/{scenario_id}/refine", response_model=RefineScenarioResponse)
+async def refine_scenario_recommendations(
+    scenario_id: str, req: RefineScenarioRequest
+) -> RefineScenarioResponse:
+    return await refine_scenario(scenario_id, req)

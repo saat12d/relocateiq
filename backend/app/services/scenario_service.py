@@ -7,10 +7,18 @@ from app.repositories.scenario_store import get_scenario, save_scenario, update_
 from app.schemas.scenario import (
     CreateScenarioRequest,
     PreferenceProfile,
+    RefineScenarioRequest,
+    RefineScenarioResponse,
     ScenarioResponse,
     ScenarioStatus,
     UpdatePreferencesRequest,
     Workplace,
+)
+from app.services.ai_explanation import (
+    AIClarificationRequired,
+    AIExplanationError,
+    generate_zone_summaries,
+    parse_refinement,
 )
 from app.services.geocoding import GeocodingError, geocode_address
 from app.services.recommendation_engine import (
@@ -147,3 +155,97 @@ def update_preferences(scenario_id: str, req: UpdatePreferencesRequest) -> Scena
 # `is not None` checks so passing `false` for avoidHighways actually toggles it off
 # rather than being treated as 'unchanged.' avoidHighways doesn't influence
 # ranking yet, so I left a TODO at the assignment with the two options."
+
+# Added separately for POST /explain and POST /refine — not part of the GenAI
+# prompt/response block above (update_preferences only).
+_REFINABLE_STATUSES = {ScenarioStatus.EXPLAINED, ScenarioStatus.SAVED}
+
+
+def _apply_ai_profile_patch(profile: PreferenceProfile, patch: dict) -> None:
+    field_map = {
+        "prefersTransit": "prefers_transit",
+        "prefersDriving": "prefers_driving",
+        "wantsQuietArea": "wants_quiet_area",
+        "avoidHighways": "avoid_highways",
+        "maxCommuteMinutes": "max_commute_minutes",
+        "maxTransfers": "max_transfers",
+    }
+    for external_key, internal_key in field_map.items():
+        if external_key not in patch or patch[external_key] is None:
+            continue
+        value = patch[external_key]
+        if internal_key in {"prefers_transit", "prefers_driving", "wants_quiet_area", "avoid_highways"}:
+            setattr(profile, internal_key, bool(value))
+            continue
+        if internal_key == "max_commute_minutes":
+            commute_cap = int(value)
+            if 5 <= commute_cap <= 60:
+                profile.max_commute_minutes = commute_cap
+            continue
+        if internal_key == "max_transfers":
+            transfers_cap = int(value)
+            if 0 <= transfers_cap <= 10:
+                profile.max_transfers = transfers_cap
+
+    # Keep transit/driving flags coherent.
+    if profile.prefers_transit:
+        profile.prefers_driving = False
+    elif profile.prefers_driving:
+        profile.prefers_transit = False
+
+
+async def explain_scenario(scenario_id: str) -> ScenarioResponse:
+    scenario = get_scenario(scenario_id)
+    if scenario is None:
+        raise HTTPException(status_code=404, detail="Scenario not found")
+    if scenario.status != ScenarioStatus.RANKED:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Scenario is in {scenario.status.value} state and cannot be explained",
+        )
+
+    try:
+        summaries = await generate_zone_summaries(
+            workplace=scenario.workplace,
+            preferences=scenario.preference_profile,
+            recommendations=scenario.recommendations,
+        )
+    except AIExplanationError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    for rec, summary in zip(scenario.recommendations, summaries):
+        rec.explanation_summary = summary
+    scenario.status = ScenarioStatus.EXPLAINED
+    save_scenario(scenario)
+    return scenario
+
+
+async def refine_scenario(scenario_id: str, req: RefineScenarioRequest) -> RefineScenarioResponse:
+    scenario = get_scenario(scenario_id)
+    if scenario is None:
+        raise HTTPException(status_code=404, detail="Scenario not found")
+    if scenario.status not in _REFINABLE_STATUSES:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Scenario is in {scenario.status.value} state and cannot be refined",
+        )
+
+    try:
+        profile_patch, explanation_summary = await parse_refinement(
+            user_message=req.user_message,
+            current_profile=scenario.preference_profile,
+            recommendations=scenario.recommendations,
+        )
+    except AIClarificationRequired as exc:
+        raise HTTPException(status_code=422, detail={"clarifyingPrompt": exc.clarifying_prompt})
+    except AIExplanationError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    _apply_ai_profile_patch(scenario.preference_profile, profile_patch)
+    scenario.recommendations = rerank_with_preferences(
+        recommendations=scenario.recommendations,
+        preferences=scenario.preference_profile,
+    )
+    scenario.status = ScenarioStatus.EXPLAINED
+    save_scenario(scenario)
+    return RefineScenarioResponse(scenario=scenario, explanation_summary=explanation_summary)
