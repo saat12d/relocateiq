@@ -29,6 +29,12 @@ class UpdatePreferencesRequest(BaseModel):
     max_commute_minutes: int | None = Field(None, ge=5, le=60, alias="maxCommuteMinutes")
 
 
+class RefineScenarioRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    user_message: str = Field(..., min_length=1, alias="userMessage")
+
+
 class Workplace(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -99,3 +105,10 @@ class ScenarioResponse(BaseModel):
     workplace: Workplace
     preference_profile: PreferenceProfile = Field(alias="preferenceProfile")
     recommendations: list[Recommendation]
+
+
+class RefineScenarioResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    scenario: ScenarioResponse
+    explanation_summary: str = Field(alias="explanationSummary")
