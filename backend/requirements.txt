@@ -10,3 +10,4 @@ pytest-asyncio
 respx
 bcrypt
 python-jose[cryptography]
+pydantic[email]
