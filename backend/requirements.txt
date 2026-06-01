@@ -11,3 +11,4 @@ respx
 bcrypt
 python-jose[cryptography]
 pydantic[email]
+alembic
