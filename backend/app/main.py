@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
 
-from app.routers import commute, neighborhoods, scenarios  # noqa: E402
+from app.routers import auth, commute, neighborhoods, scenarios  # noqa: E402
 
 app = FastAPI(
     title="RelocateIQ API",
@@ -22,6 +22,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+app.include_router(auth.router)
 app.include_router(commute.router)
 app.include_router(neighborhoods.router)
 app.include_router(scenarios.router)
