@@ -9,7 +9,7 @@ Also defines the ScenarioStatus enum used to track a scenario's lifecycle
 """
 import enum
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import (
@@ -41,12 +41,17 @@ class User(Base):
     name: Mapped[str]=mapped_column(String, nullable=False)
     email:Mapped[str]=mapped_column(String,nullable=False, unique=True,index=True)
     
+    # hashed password using bcrypt
+    password_hash: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    # timestamp when the account was created. Set automatically on insert
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
     #Since one user can have or or many scenerios.  The reverse side is CommuteScenerio.user
     scenarios: Mapped[list["CommuteScenario"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
     )
-#Thisi is the CommunteScenario class which will serve as the central entity for one neighborhood search
+#This is the CommunteScenario class which will serve as the central entity for one neighborhood search
 class CommuteScenario(Base):
     """
     This is a single neighborhood search performed by a user.
@@ -58,7 +63,7 @@ class CommuteScenario(Base):
     scenario_id:Mapped[str]=mapped_column(String, primary_key=True, default=_uuid)
     user_id: Mapped[str]=mapped_column(ForeignKey("users.user_id"), nullable=False, index=True)
     search_radius_miles: Mapped[float]=mapped_column(Float, nullable=False)
-    created_at: Mapped[datetime]=mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime]=mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     status: Mapped[ScenarioStatus]=mapped_column(
         SQLEnum(ScenarioStatus,name="scenario_status"),
         default=ScenarioStatus.DRAFT,
