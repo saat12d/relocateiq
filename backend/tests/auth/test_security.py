@@ -1,3 +1,13 @@
+# [GenAI Use] Prompt: "Role: backend test engineer using pytest. Context: I have a
+# security module (security.py) with four pure functions — hash_password,
+# verify_password, create_access_token, decode_access_token — plus a custom
+# InvalidTokenError. Task: Write unit tests covering each function. Criteria: test
+# both happy paths and failure paths; verify passwords hash to non-plaintext and
+# salt (same password -> different hashes); verify tokens round-trip; verify
+# tampered signatures, expired tokens, missing-subject tokens, and garbage input
+# are all rejected. No database or network."
+# [GenAI Use] LLM Response Start
+
 """
 Unit tests for app.auth.security.
 
@@ -132,5 +142,11 @@ def test_decode_rejects_expired_token():
         algorithm=security._JWT_ALGORITHM,
     )
     with pytest.raises(InvalidTokenError):
-        decode_access_token(expired)
-        
+        decode_access_token(expired) 
+# [GenAI Use] LLM Response End
+
+# [GenAI Use] Reflection: Every test correctly passes as expected. We need
+# to test for salting in the code to ensure that the same password is not 
+# hashed the same. We also needed to test the tampered-signature because if 
+# we didnt' then an attacker would be able to just create a token that says
+# "sub":"admin-user-id" and could get access to any account.

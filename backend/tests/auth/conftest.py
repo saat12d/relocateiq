@@ -1,3 +1,12 @@
+# [GenAI Use] Prompt: "Role: pytest expert. Context: FastAPI app with a get_db
+# dependency backed by Postgres; I want auth tests isolated from the real database.
+# Task: Write a conftest.py with a fixture providing a fresh in-memory SQLite
+# database per test, override the app's get_db dependency to use it, and provide
+# an async httpx client (ASGITransport) matching our existing test pattern. Set a
+# JWT_SECRET so the suite is self-contained. Criteria: tests never touch the real
+# Postgres; clean teardown; override is cleared after each test."
+# [GenAI Use] LLM Response Start
+
 """
 Shared test fixtures for the auth test suite.
 
@@ -95,3 +104,12 @@ async def client(db_session):
 
     # Clean up the override so it never leaks into other test files.
     app.dependency_overrides.clear()
+# [GenAI Use] LLM Response End
+
+# [GenAI Use] Reflection: For all the tests, we opted to run them 
+# through this file so that we could spin up an in-memory SQLite
+# database. We chose to do this because when we call get_db to get 
+# a session this would normally return a real Postgres session. Using
+# SQLite we can avoid this. We also chose to use StaticPool because 
+# it forces SQLAlchemy to reuse a single shared connection for the
+# entirety of the tests. These tests also worked perfectly. 

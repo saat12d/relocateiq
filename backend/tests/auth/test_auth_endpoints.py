@@ -1,3 +1,13 @@
+# [GenAI Use] Prompt: "Role: backend test engineer fluent in pytest, FastAPI, and
+# httpx ASGI transport. Context: auth endpoints POST /signup (201 + token, 400 on
+# duplicate, 422 on bad input), POST /login (200 + token, 401 on bad credentials),
+# GET /me (200 with camelCase userId via bearer token, 401 without). Uses an
+# in-memory SQLite client fixture. Task: Write black-box integration tests covering
+# the documented contract and error codes. Criteria: assert on specific status
+# codes and response fields; test the password length boundary (7 fails, 8 passes);
+# confirm /me never leaks the password hash; match the team's httpx.AsyncClient
+# pattern."
+# [GenAI Use] LLM Response Start
 """
 Integration tests for the auth endpoints.
 
@@ -156,3 +166,10 @@ async def test_me_with_bad_token_returns_401(client):
         headers={"Authorization": "Bearer not-a-valid-token"},
     )
     assert response.status_code == 401
+# [GenAI Use] LLM Response End
+
+# [GenAI Use] Reflection: We chose to test for both 7-char and 8-char
+# passwords to ensure that we are boundary testing. We also decided to test 
+# that the password hash isn't in the /me response so that we can 
+# avoid data leaks. Overall the tests worked wonderfully and ran very
+# smoothly.

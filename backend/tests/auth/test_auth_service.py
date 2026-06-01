@@ -1,3 +1,12 @@
+# [GenAI Use] Prompt: "Role: backend test engineer using pytest. Context: an
+# auth_service module with register_user, authenticate_user, and get_user_by_token,
+# raising EmailAlreadyRegisteredError, InvalidCredentialsError, and UserNotFoundError.
+# Tests use an in-memory SQLite db_session fixture. Task: Write unit tests for the
+# service logic, happy and failure paths for each function — including that an
+# unknown email and a wrong password raise the SAME error (no user enumeration),
+# and that a token for a deleted user raises UserNotFoundError. Criteria: assert on
+# specifics; one concept per test; Arrange-Act-Assert."
+# [GenAI Use] LLM Response Start
 """
 Unit tests for app.services.auth_service.
 
@@ -129,3 +138,10 @@ def test_get_user_by_token_rejects_vanished_user(db_session):
 
     with pytest.raises(auth_service.UserNotFoundError):
         auth_service.get_user_by_token(db_session, token)
+# [GenAI Use] LLM Response End
+
+# [GenAI Use] Reflection: These tests worked very good and addressed
+# any issues that could have arose. It's interesting to note that 
+# the AI correctly tested for both a "wrong password" and an 
+# "unknown email" which hackers typically use to try and figure 
+# out which emails have accounts and which don't.
