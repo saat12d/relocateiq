@@ -1,0 +1,292 @@
+/**
+ * Auth.css
+ * Styles for the split-screen RelocateIQ authentication layout.
+ */
+
+/* =========================================
+   Layout & Shell
+   ========================================= */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f3f4f6;
+  padding: 1rem;
+}
+
+.auth-shell {
+  display: flex;
+  flex-direction: column-reverse;
+  width: 100%;
+  max-width: 1000px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .auth-shell {
+    flex-direction: row; /* Side-by-side on desktop */
+    min-height: 600px;
+  }
+}
+
+/* =========================================
+   Left Side: Map Panel & SVG Art
+   ========================================= */
+.auth-map-panel {
+  flex: 1;
+  background-color: #1f2937; /* Dark slate */
+  color: #ffffff;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-panel-logo {
+  font-weight: 700;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 10;
+}
+
+.auth-site-logo__mark {
+  color: #3b82f6;
+}
+
+.auth-note {
+  z-index: 10;
+}
+
+.auth-note h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.auth-note p {
+  color: #9ca3af;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* SVG Animation Styles */
+.auth-route-art {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 150%;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.auth-radius {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 2;
+}
+
+.auth-route {
+  fill: none;
+  stroke-width: 4;
+  stroke-dasharray: 8 8;
+}
+
+/* Tone Colors */
+.auth-route--green,
+.auth-stop--green,
+.auth-traveler--green {
+  stroke: #10b981;
+  fill: #10b981;
+}
+.auth-route--amber,
+.auth-stop--amber,
+.auth-traveler--amber {
+  stroke: #f59e0b;
+  fill: #f59e0b;
+}
+.auth-route--blue,
+.auth-stop--blue,
+.auth-traveler--blue {
+  stroke: #3b82f6;
+  fill: #3b82f6;
+}
+.auth-route--red,
+.auth-stop--red,
+.auth-traveler--red {
+  stroke: #ef4444;
+  fill: #ef4444;
+}
+
+.auth-office {
+  fill: #ffffff;
+}
+.auth-office-icon {
+  fill: #1f2937;
+}
+
+.auth-zone text {
+  fill: #ffffff;
+  font-size: 14px;
+  font-weight: bold;
+  text-anchor: middle;
+}
+
+/* =========================================
+   Right Side: Form Panel
+   ========================================= */
+.auth-form-panel {
+  flex: 1;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.auth-site-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #111827;
+  text-decoration: none;
+  margin-bottom: 2rem;
+}
+
+.auth-intro h1 {
+  font-size: 1.875rem;
+  margin: 0.5rem 0;
+  color: #111827;
+}
+
+.auth-intro p {
+  color: #6b7280;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.auth-eyebrow {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #3b82f6;
+}
+
+/* =========================================
+   Form Elements
+   ========================================= */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.auth-form label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.auth-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.auth-label-row a {
+  font-size: 0.875rem;
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.auth-label-row a:hover {
+  text-decoration: underline;
+}
+
+.auth-form input {
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.auth-form input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.auth-submit {
+  margin-top: 1rem;
+  padding: 0.875rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.auth-button--dark {
+  background-color: #111827;
+  color: #ffffff;
+}
+
+.auth-button--dark:hover:not(:disabled) {
+  background-color: #374151;
+}
+
+.auth-button--dark:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   Alerts & Utilities
+   ========================================= */
+.auth-message {
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.auth-message--error {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #f87171;
+}
+
+.auth-message--success {
+  background-color: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #4ade80;
+}
+
+.auth-switch {
+  margin-top: 2rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.auth-switch a {
+  color: #3b82f6;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.auth-switch a:hover {
+  text-decoration: underline;
+}
