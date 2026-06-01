@@ -1,0 +1,89 @@
+# Backend (Python + FastAPI)
+
+## Prerequisites
+
+- Python 3.11+
+- A running PostgreSQL database
+- API keys for the external services (see `.env.example`)
+
+## Setup
+
+1. Move into the backend folder:
+   - `cd backend`
+2. Create a virtual environment:
+   - `python3 -m venv .venv`  (use `python` instead of `python3` on Windows)
+3. Activate it:
+   - macOS/Linux: `source .venv/bin/activate`
+   - Windows (PowerShell): `.\.venv\Scripts\Activate.ps1`
+   - Windows (cmd): `.venv\Scripts\activate.bat`
+
+   You'll know it worked when your prompt starts with `(.venv)`.
+   If PowerShell blocks the script, run this once in that session first:
+   `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
+4. Install dependencies:
+   - `pip install -r requirements.txt`
+5. Create your env file and fill in the values:
+   - macOS/Linux: `cp .env.example .env`
+   - Windows (PowerShell): `Copy-Item .env.example .env`
+
+   Make sure `DATABASE_URL` points at your local Postgres database.
+
+## Database
+
+Apply the latest schema migrations before running the server for the
+first time (and after pulling changes that add new migrations):
+
+- `alembic upgrade head`
+
+See the Database Migrations section below for how to create migrations
+when you change a model.
+
+## Run
+
+- `uvicorn app.main:app --reload --port 8000`
+
+Backend runs at `http://localhost:8000`.
+## Database Migrations (Alembic)
+
+The database schema is managed by Alembic. Migration files live in
+`backend/alembic/versions/` and should be committed to Git.
+
+### First-time setup
+
+After cloning and setting up your `.env` (with a valid `DATABASE_URL`),
+bring your database up to the latest schema:
+
+- `alembic upgrade head`
+
+If your database already has the tables (e.g. created by an earlier
+`init_db()` run) and you just need Alembic to start tracking it without
+recreating anything:
+
+- `alembic stamp head`
+
+### Making a schema change
+
+Whenever you change a model in `app/db/models.py` (add a column, a table,
+an index, etc.):
+
+1. Generate a migration from the diff:
+   - `alembic revision --autogenerate -m "short description of the change"`
+2. **Review the generated file** in `alembic/versions/`. Autogenerate is
+   good but not perfect — double-check enum types, server defaults, and
+   indexes before applying.
+3. Apply it to your database:
+   - `alembic upgrade head`
+4. Commit the new migration file along with your model changes.
+
+### Useful commands
+
+- `alembic current` — show which revision your database is on
+- `alembic history` — list all migrations
+- `alembic downgrade -1` — roll back the most recent migration
+
+### Notes
+
+- The database URL is read from `DATABASE_URL` in `backend/.env`, not from
+  `alembic.ini`, so credentials never get committed.
+- After pulling changes that include new migrations, run
+  `alembic upgrade head` to catch your local database up.
