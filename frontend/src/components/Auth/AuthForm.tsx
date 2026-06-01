@@ -1,6 +1,7 @@
 import React, { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { login, saveAuthToken, signup } from "../../lib/auth";
+import "./Auth.css";
 
 type AuthMode = "login" | "signup";
 type AuthState = "idle" | "submitting" | "success" | "error";

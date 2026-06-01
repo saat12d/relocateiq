@@ -1,4 +1,5 @@
 import React from "react";
+import "./Auth.css";
 
 type AuthMode = "login" | "signup";
 
