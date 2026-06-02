@@ -1,0 +1,77 @@
+
+{
+  "westwood": [
+    {
+      "listingId": "ww-001",
+      "address": "1042 Gayley Ave, Los Angeles, CA 90024",
+      "rent": 3200,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/ww-001"
+    },
+    {
+      "listingId": "ww-002",
+      "address": "580 Kelton Ave, Los Angeles, CA 90024",
+      "rent": 2450,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/ww-002"
+    }
+  ],
+  "santa-monica": [
+    {
+      "listingId": "sm-001",
+      "address": "1320 2nd St, Santa Monica, CA 90401",
+      "rent": 3800,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/sm-001"
+    },
+    {
+      "listingId": "sm-002",
+      "address": "825 Lincoln Blvd, Santa Monica, CA 90403",
+      "rent": 2900,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/sm-002"
+    }
+  ],
+  "culver-city": [
+    {
+      "listingId": "cc-001",
+      "address": "9300 Culver Blvd, Culver City, CA 90232",
+      "rent": 3100,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/cc-001"
+    }
+  ],
+  "silver-lake": [
+    {
+      "listingId": "sl-001",
+      "address": "2700 Silver Lake Blvd, Los Angeles, CA 90039",
+      "rent": 2850,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/sl-001"
+    },
+    {
+      "listingId": "sl-002",
+      "address": "1500 Micheltorena St, Los Angeles, CA 90026",
+      "rent": 2200,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/sl-002"
+    }
+  ],
+  "koreatown": [
+    {
+      "listingId": "kt-001",
+      "address": "3400 W 6th St, Los Angeles, CA 90020",
+      "rent": 2400,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/kt-001"
+    }
+  ]
+}
