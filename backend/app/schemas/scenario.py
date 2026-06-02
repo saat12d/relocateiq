@@ -112,3 +112,15 @@ class RefineScenarioResponse(BaseModel):
 
     scenario: ScenarioResponse
     explanation_summary: str = Field(alias="explanationSummary")
+
+#New class, this is the schema for the House listing
+class HousingListing(BaseModel):
+    model_config=ConfigDict(populate_by_name=True)
+    #now for the elements we want
+    listing_id: str=Field(alias="listingId")
+    address: str
+    rent:float
+    bedrooms: int
+    bathrooms:int
+    url:str
+    

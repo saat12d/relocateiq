@@ -21,6 +21,12 @@
 - `GET /health` health check
 - `POST /api/v1/scenarios` create a commute scenario and rank neighborhoods
 - `GET /api/v1/scenarios/{scenarioId}` fetch a scenario by id
+- `GET /api/v1/zones/{zoneId}/listings` fetch housing listings for a zone
+### Get zone listings
+```bash
+curl http://localhost:8000/api/v1/zones/westwood/listings
+```
+This returns '200' with an array full of the housing lisitings of this specific zone.  The listings are fethced from the static JSON throguh StaticListingProvider.  A zone with no listings return an empty list.  Build in a way that will make it a little easier to integrate a live housing API soon enough
 
 ### Create scenario
 
