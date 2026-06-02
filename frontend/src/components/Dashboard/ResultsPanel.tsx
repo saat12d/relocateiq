@@ -1,13 +1,23 @@
 import React from "react";
-import { neighborhoods } from "./data";
+import type { CommuteScenario } from "../models/types";
+
+type ResultsPanelProps = {
+  recommendations: CommuteScenario["recommendations"];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+};
 
 export default function ResultsPanel({
+  recommendations,
   selectedId,
   onSelect,
-}: {
-  selectedId: string;
-  onSelect: (id: string) => void;
-}) {
+}: ResultsPanelProps) {
+  const getTone = (rank: number) => {
+    if (rank === 1) return "green";
+    if (rank <= 3) return "amber";
+    return "red";
+  };
+
   return (
     <aside className="results-panel" aria-label="Top neighborhoods">
       <div className="panel-title-row">
@@ -15,35 +25,46 @@ export default function ResultsPanel({
           <h1>Top neighborhoods</h1>
           <p>Ranked by total commute time</p>
         </div>
-        <span>20 areas</span>
+        <span>{recommendations.length} areas</span>
       </div>
       <div className="results-list">
-        {neighborhoods.map((item) => (
-          <button
-            className={`result-card result-card--${item.tone} ${item.id === selectedId ? "is-selected" : ""}`}
-            type="button"
-            key={item.id}
-            onClick={() => onSelect(item.id)}
-          >
-            <span className={`dashboard-rank dashboard-rank--${item.tone}`}>
-              {item.rank}
-            </span>
-            <div className="result-card__body">
-              <div className="result-card__headline">
-                <strong>{item.name}</strong>
-                <b>{item.drive} min</b>
+        {recommendations.map((item) => {
+          const tone = getTone(item.rank);
+          const isSelected = item.zone.zoneId === selectedId;
+
+          return (
+            <button
+              className={`result-card result-card--${tone} ${isSelected ? "is-selected" : ""}`}
+              type="button"
+              key={item.zone.zoneId}
+              onClick={() => onSelect(item.zone.zoneId)}
+            >
+              <span className={`dashboard-rank dashboard-rank--${tone}`}>
+                {item.rank}
+              </span>
+              <div className="result-card__body">
+                <div className="result-card__headline">
+                  <strong>{item.zone.name}</strong>
+                  <b>{item.commuteAnalysis.driveTimePeakMinutes} min</b>
+                </div>
+                <div className="result-card__metrics">
+                  <span>
+                    Drive {item.commuteAnalysis.driveTimePeakMinutes} min
+                  </span>
+                  <span>
+                    Transit {item.commuteAnalysis.transitTimePeakMinutes} min
+                  </span>
+                </div>
+                <div className="result-card__chips">
+                  <span>
+                    Walkability {item.lifestyleAnalysis.walkabilityScore}
+                  </span>
+                  <span>Quietness {item.lifestyleAnalysis.quietnessScore}</span>
+                </div>
               </div>
-              <div className="result-card__metrics">
-                <span>Drive {item.drive} min</span>
-                <span>Transit {item.transit} min</span>
-              </div>
-              <div className="result-card__chips">
-                <span>Walkability {item.walkability}</span>
-                <span>Vibe {item.vibe}</span>
-              </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
       <button className="show-more-button" type="button">
         Show more neighborhoods

@@ -1,14 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Map as MapboxMap } from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import mapPreview from "../../assets/home-map.png";
-import {
-  Neighborhood,
-  neighborhoods,
-  colors,
-  fallbackPositions,
-  WORKPLACE,
-} from "./data";
+
+import { CommuteScenario } from "../../models/types";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 const HAS_MAPBOX_TOKEN = Boolean(
@@ -27,69 +21,106 @@ function circlePolygon([lng, lat]: [number, number], radius = 0.028) {
   return [...points, points[0]];
 }
 
-function buildMapData(selectedId: string) {
+function buildMapData(
+  recommendations: CommuteScenario["recommendations"],
+  selectedId: string | null,
+  workplace: { lat: number; lng: number },
+) {
+  const workplaceCoords: [number, number] = [
+    workplace.longitude,
+    workplace.latitude,
+  ];
+
+  const getColor = (rank: number) => {
+    if (rank === 1) return "#4f9d52"; // Green
+    if (rank <= 3) return "#f3a428"; // Amber
+    return "#d84f3f"; // Red
+  };
+
   return {
     routes: {
       type: "FeatureCollection" as const,
-      features: neighborhoods.map((item) => ({
-        type: "Feature" as const,
-        properties: {
-          id: item.id,
-          color: colors[item.tone],
-          selected: item.id === selectedId,
-        },
-        geometry: {
-          type: "LineString" as const,
-          coordinates: [
-            WORKPLACE,
-            [
-              (WORKPLACE[0] + item.coordinates[0]) / 2 +
-                (item.rank % 2 ? 0.011 : -0.014),
-              (WORKPLACE[1] + item.coordinates[1]) / 2 +
-                (item.rank % 2 ? 0.004 : -0.003),
+      features: recommendations.map((item, index) => {
+        const itemCoords: [number, number] = [
+          item.zone.centerLng,
+          item.zone.centerLat,
+        ];
+        const rank = index + 1;
+
+        return {
+          type: "Feature" as const,
+          properties: {
+            id: item.zone.zoneId,
+            color: getColor(rank),
+            selected: item.zone.zoneId === selectedId,
+          },
+          geometry: {
+            type: "LineString" as const,
+            coordinates: [
+              workplaceCoords,
+              [
+                (workplaceCoords[0] + itemCoords[0]) / 2 +
+                  (rank % 2 ? 0.011 : -0.014),
+                (workplaceCoords[1] + itemCoords[1]) / 2 +
+                  (rank % 2 ? 0.004 : -0.003),
+              ],
+              itemCoords,
             ],
-            item.coordinates,
-          ],
-        },
-      })),
+          },
+        };
+      }),
     },
     zones: {
       type: "FeatureCollection" as const,
-      features: neighborhoods.map((item) => ({
-        type: "Feature" as const,
-        properties: {
-          id: item.id,
-          color: colors[item.tone],
-          selected: item.id === selectedId,
-        },
-        geometry: {
-          type: "Polygon" as const,
-          coordinates: [
-            circlePolygon(
-              item.coordinates,
-              item.id === selectedId ? 0.034 : 0.028,
-            ),
-          ],
-        },
-      })),
+      features: recommendations.map((item, index) => {
+        const itemCoords: [number, number] = [
+          item.zone.centerLng,
+          item.zone.centerLat,
+        ];
+
+        return {
+          type: "Feature" as const,
+          properties: {
+            id: item.zone.zoneId,
+            color: getColor(index + 1),
+            selected: item.zone.zoneId === selectedId,
+          },
+          geometry: {
+            type: "Polygon" as const,
+            coordinates: [
+              circlePolygon(
+                itemCoords,
+                item.zone.zoneId === selectedId ? 0.034 : 0.028,
+              ),
+            ],
+          },
+        };
+      }),
     },
     labels: {
       type: "FeatureCollection" as const,
-      features: neighborhoods.map((item) => ({
-        type: "Feature" as const,
-        properties: {
-          id: item.id,
-          rank: String(item.rank),
-          color: colors[item.tone],
-          selected: item.id === selectedId,
-        },
-        geometry: { type: "Point" as const, coordinates: item.coordinates },
-      })),
+      features: recommendations.map((item, index) => {
+        const itemCoords: [number, number] = [
+          item.zone.centerLng,
+          item.zone.centerLat,
+        ];
+
+        return {
+          type: "Feature" as const,
+          properties: {
+            id: item.zone.zoneId,
+            rank: String(item.rank),
+            color: getColor(index + 1),
+            selected: item.zone.zoneId === selectedId,
+          },
+          geometry: { type: "Point" as const, coordinates: itemCoords },
+        };
+      }),
     },
     workplace: {
       type: "Feature" as const,
       properties: {},
-      geometry: { type: "Point" as const, coordinates: WORKPLACE },
+      geometry: { type: "Point" as const, coordinates: workplaceCoords },
     },
   };
 }
@@ -123,80 +154,28 @@ function MapChrome() {
   );
 }
 
-function FallbackMap({
-  selected,
-  onSelect,
-}: {
-  selected: Neighborhood;
+type DashboardMapProps = {
+  recommendations: CommuteScenario["recommendations"];
+  selectedId: string | null;
   onSelect: (id: string) => void;
-}) {
-  return (
-    <section
-      className="map-shell map-shell--fallback"
-      aria-label="Ranked commute map"
-    >
-      <img src={mapPreview} alt="" />
-      <svg
-        className="map-drawing"
-        viewBox="0 0 760 720"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-      >
-        <circle className="radius-ring" cx="380" cy="345" r="165" />
-        <circle
-          className="radius-ring radius-ring--wide"
-          cx="380"
-          cy="345"
-          r="250"
-        />
-        {neighborhoods.map((item) => {
-          const [x, y] = fallbackPositions[item.id];
-          return (
-            <path
-              key={item.id}
-              className={`fallback-route fallback-route--${item.tone}${item.id === selected.id ? " is-selected" : ""}`}
-              d={`M380 345 C ${x - 44} ${y - 24}, ${x - 28} ${y + 34}, ${x} ${y}`}
-            />
-          );
-        })}
-        <circle className="workplace-dot" cx="380" cy="345" r="20" />
-      </svg>
-      <div className="map-zone-buttons">
-        {neighborhoods.map((item) => {
-          const [x, y] = fallbackPositions[item.id];
-          return (
-            <button
-              className={`map-zone-button map-zone-button--${item.tone}${item.id === selected.id ? " is-selected" : ""}`}
-              type="button"
-              key={item.id}
-              onClick={() => onSelect(item.id)}
-              style={{
-                left: `${(x / 760) * 100}%`,
-                top: `${(y / 720) * 100}%`,
-              }}
-              aria-label={`Select ${item.name}`}
-            >
-              {item.rank}
-            </button>
-          );
-        })}
-      </div>
-      <MapChrome />
-    </section>
-  );
-}
+  workplace: { latitude: number; longitude: number };
+};
 
 export default function DashboardMap({
-  selected,
+  recommendations,
+  selectedId,
   onSelect,
-}: {
-  selected: Neighborhood;
-  onSelect: (id: string) => void;
-}) {
+  workplace,
+}: DashboardMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapboxMap | null>(null);
   const [failed, setFailed] = useState(false);
-  const mapData = useMemo(() => buildMapData(selected.id), [selected.id]);
+
+  // Rebuild map data whenever the API data or selection changes
+  const mapData = useMemo(
+    () => buildMapData(recommendations, selectedId, workplace),
+    [recommendations, selectedId, workplace],
+  );
 
   useEffect(() => {
     if (!HAS_MAPBOX_TOKEN || !mapContainerRef.current) return;
@@ -211,7 +190,7 @@ export default function DashboardMap({
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
         style: "mapbox://styles/mapbox/light-v11",
-        center: [-118.276, 34.038],
+        center: [workplace.longitude, workplace.latitude],
         zoom: 11.15,
         bearing: -7,
         interactive: true,
@@ -342,6 +321,7 @@ export default function DashboardMap({
       ["dashboard-routes", mapData.routes],
       ["dashboard-zones", mapData.zones],
       ["dashboard-zone-labels", mapData.labels],
+      ["dashboard-workplace", mapData.workplace],
     ] as const;
     sources.forEach(([id, data]) => {
       const source = map.getSource(id);
@@ -350,7 +330,11 @@ export default function DashboardMap({
   }, [mapData]);
 
   if (!HAS_MAPBOX_TOKEN || failed) {
-    return <FallbackMap selected={selected} onSelect={onSelect} />;
+    return (
+      <div className="dashboard-empty-state">
+        Please add your VITE_MAPBOX_TOKEN to the .env file.
+      </div>
+    );
   }
 
   return (

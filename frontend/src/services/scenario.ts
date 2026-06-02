@@ -3,8 +3,8 @@ import type { CommuteScenario, PreferenceProfile } from "../models/types";
 
 // Matching the CreateScenarioRequest Pydantic schema
 export type CreateScenarioPayload = {
-  work_address: string;
-  search_radius_miles: number;
+  workplaceAddress: string;
+  maxRadiusMiles: number;
   preferences: Partial<PreferenceProfile>;
 };
 

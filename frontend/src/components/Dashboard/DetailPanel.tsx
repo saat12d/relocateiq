@@ -1,5 +1,6 @@
 import React from "react";
-import { Neighborhood, listings } from "./data";
+import type { CommuteScenario } from "../models/types";
+import { listings } from "./data";
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
   const tone = value >= 70 ? "green" : value >= 60 ? "amber" : "red";
@@ -17,19 +18,28 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
   );
 }
 
-export default function DetailPanel({ selected }: { selected: Neighborhood }) {
+// Extract the type of a single recommendation from the scenario type
+type Recommendation = CommuteScenario["recommendations"][0];
+
+export default function DetailPanel({
+  selected,
+}: {
+  selected: Recommendation;
+}) {
+  const tone =
+    selected.rank === 1 ? "green" : selected.rank <= 3 ? "amber" : "red";
+
   return (
-    <aside className="zone-panel" aria-label={`${selected.name} details`}>
-      <div
-        className={`zone-panel__header zone-panel__header--${selected.tone}`}
-      >
-        <span className={`dashboard-rank dashboard-rank--${selected.tone}`}>
+    <aside className="zone-panel" aria-label={`${selected.zone.name} details`}>
+      <div className={`zone-panel__header zone-panel__header--${tone}`}>
+        <span className={`dashboard-rank dashboard-rank--${tone}`}>
           {selected.rank}
         </span>
         <div>
-          <h2>{selected.name}</h2>
+          <h2>{selected.zone.name}</h2>
           <p>
-            <strong>{selected.drive} min</strong> total commute
+            <strong>{selected.commuteAnalysis.driveTimePeakMinutes} min</strong>{" "}
+            total commute
           </p>
         </div>
         <button type="button" aria-label="Save neighborhood">
@@ -39,14 +49,15 @@ export default function DetailPanel({ selected }: { selected: Neighborhood }) {
       <section className="commute-summary" aria-label="Commute breakdown">
         <article>
           <small>Drive</small>
-          <strong>{selected.drive} min</strong>
-          <p>12.4 miles</p>
+          <strong>{selected.commuteAnalysis.driveTimePeakMinutes} min</strong>
+          <p>Peak congestion: {selected.commuteAnalysis.congestionLevel}</p>
         </article>
         <article>
           <small>Transit</small>
-          <strong>{selected.transit} min</strong>
+          <strong>{selected.commuteAnalysis.transitTimePeakMinutes} min</strong>
           <p>
-            {selected.transfers} transfer{selected.transfers !== 1 ? "s" : ""}
+            {selected.commuteAnalysis.transferCount} transfer
+            {selected.commuteAnalysis.transferCount !== 1 ? "s" : ""}
           </p>
         </article>
       </section>
@@ -55,10 +66,23 @@ export default function DetailPanel({ selected }: { selected: Neighborhood }) {
           <h3>Lifestyle scores</h3>
           <a href="#scores">See all</a>
         </div>
-        <ScoreBar label="Walkability" value={selected.walkability} />
-        <ScoreBar label="Safety" value={selected.safety} />
-        <ScoreBar label="Amenities" value={selected.amenities} />
-        <ScoreBar label="Schools" value={selected.schools} />
+        <ScoreBar
+          label="Walkability"
+          value={selected.lifestyleAnalysis.walkabilityScore}
+        />
+        <ScoreBar
+          label="Groceries"
+          value={selected.lifestyleAnalysis.groceryScore}
+        />
+        <ScoreBar label="Parks" value={selected.lifestyleAnalysis.parkScore} />
+        <ScoreBar
+          label="Nightlife"
+          value={selected.lifestyleAnalysis.nightlifeScore}
+        />
+        <ScoreBar
+          label="Quietness"
+          value={selected.lifestyleAnalysis.quietnessScore}
+        />
       </section>
       <section className="ai-panel">
         <div className="section-title">
@@ -67,15 +91,12 @@ export default function DetailPanel({ selected }: { selected: Neighborhood }) {
           </h3>
           <b>✦</b>
         </div>
-        <p>{selected.summary}</p>
-        <ul>
-          <li>Strong commute fit compared with nearby neighborhoods</li>
-          <li>Walkability and daily-life scores are already listing-ready</li>
-        </ul>
+        {/* Render the actual AI explanation from the backend! */}
+        <p>{selected.explanationSummary || "Generating insight..."}</p>
       </section>
       <section className="listing-panel">
         <div className="section-title">
-          <h3>Listings in {selected.name}</h3>
+          <h3>Listings in {selected.zone.name}</h3>
           <a href="#listings">View all</a>
         </div>
         <div className="listing-grid">
