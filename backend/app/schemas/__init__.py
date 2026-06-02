@@ -1,6 +1,7 @@
 from app.schemas.scenario import (
     CommuteAnalysis,
     CreateScenarioRequest,
+    HousingListing,
     LifestyleAnalysis,
     PreferenceProfile,
     Recommendation,
@@ -13,6 +14,7 @@ from app.schemas.scenario import (
 __all__ = [
     "CommuteAnalysis",
     "CreateScenarioRequest",
+    "HousingListing",
     "LifestyleAnalysis",
     "PreferenceProfile",
     "Recommendation",
