@@ -6,7 +6,9 @@ import DetailPanel from "../components/Dashboard/DetailPanel";
 import { neighborhoods } from "../components/Dashboard/data";
 import "../components/Dashboard/Dashboard.css";
 
-export default function DashboardPage() {
+import { withRequirements, userSignedInRequirement } from "../lib/Requirements";
+
+function DashboardPage() {
   const [selectedId, setSelectedId] = useState(neighborhoods[0].id);
   const selected =
     neighborhoods.find((item) => item.id === selectedId) ?? neighborhoods[0];
@@ -22,3 +24,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+export default withRequirements(DashboardPage, [userSignedInRequirement]);
