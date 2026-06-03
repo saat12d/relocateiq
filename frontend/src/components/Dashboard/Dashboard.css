@@ -39,6 +39,13 @@
   color: var(--ink); font-size: 14px; font-weight: 750;
 }
 
+.dashboard-search-btn {
+  flex: 0 0 auto; height: 46px; padding: 0 22px; border: 0; border-radius: 10px;
+  color: #fffdf8; background: linear-gradient(180deg, #2c241f, #17120f);
+  cursor: pointer; font: inherit; font-weight: 900;
+}
+.dashboard-search-btn:disabled { opacity: 0.6; cursor: default; }
+
 .dashboard-radius { gap: 10px; color: var(--muted); font-size: 12px; font-weight: 800; }
 .dashboard-radius label { white-space: nowrap; }
 .dashboard-radius select {
