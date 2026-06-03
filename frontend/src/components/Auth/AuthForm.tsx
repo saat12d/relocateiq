@@ -8,8 +8,8 @@ type AuthState = "idle" | "submitting" | "success" | "error";
 
 function Logo() {
   return (
-    <Link className="auth-site-logo" to="/" aria-label="RelocateIQ home">
-      <span className="auth-site-logo__mark">+</span>
+    <Link className="site-logo" to="/" aria-label="RelocateIQ home">
+      <span className="site-logo__mark">+</span>
       <span>RelocateIQ</span>
     </Link>
   );
