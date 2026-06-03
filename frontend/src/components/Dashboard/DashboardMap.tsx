@@ -125,13 +125,21 @@ function buildMapData(
   };
 }
 
-// Format minutes-since-midnight as a 12-hour clock label, e.g. 450 -> "7:30 AM".
-function formatDeparture(totalMinutes: number): string {
-  const hours24 = Math.floor(totalMinutes / 60);
+// Convert minutes-since-midnight to a 24h "HH:MM" value for <input type="time">.
+function minutesToTimeValue(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  const period = hours24 < 12 ? "AM" : "PM";
-  const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
-  return `${hours12}:${String(minutes).padStart(2, "0")} ${period}`;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+// Parse an "HH:MM" time input value back into minutes-since-midnight (or null).
+function timeValueToMinutes(value: string): number | null {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return null;
+  return hours * 60 + minutes;
 }
 
 type MapChromeProps = {
@@ -188,9 +196,21 @@ function MapChrome({
           onKeyUp={commit}
           aria-label="Departure time"
         />
-        <button type="button" onClick={commit} disabled={isLoading}>
-          {formatDeparture(draft)}
-        </button>
+        <input
+          type="time"
+          className="departure-time-input"
+          value={minutesToTimeValue(draft)}
+          disabled={isLoading}
+          onChange={(event) => {
+            const minutes = timeValueToMinutes(event.target.value);
+            if (minutes !== null) setDraft(minutes);
+          }}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+          }}
+          aria-label="Departure time"
+        />
       </div>
     </>
   );
