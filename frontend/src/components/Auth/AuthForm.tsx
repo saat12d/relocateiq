@@ -38,7 +38,7 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
 
       saveAuthToken(response.access_token);
       setStatus("success");
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       setStatus("error");
       setMessage(

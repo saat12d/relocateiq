@@ -6,10 +6,9 @@
 # - GET /me (200): returns the currently authenticated user
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from app.auth.security import InvalidTokenError
+from app.auth.deps import get_current_user
 from app.db.database import get_db
 from app.db.models import User
 from app.schemas.auth import (
@@ -21,33 +20,6 @@ from app.schemas.auth import (
 from app.services import auth_service
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
-
-# Extracts the "Authorization: Bearer <token>" header and the FastAPI returns 403 automatically if it's missing,
-# and we convert token problems found later into 401s inside get_current_user.
-_bearer_scheme = HTTPBearer(auto_error=True)
-
-
-# --- Dependency for protected routes ---
-
-# - Resolves the bearer token in the request to the User who owns it.
-# - Any endpoint that needs the logged-in user just adds `user: User = Depends(get_current_user)` to its signature.
-# - Raises 401 for any bad token or a user that no longer exists.
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
-    db: Session = Depends(get_db),
-) -> User:
-    # Pull the raw token string out of the Authorization header.
-    token = credentials.credentials
-    try:
-        # Delegate to the service which handles both token verification and the DB lookup.
-        return auth_service.get_user_by_token(db, token)
-    except (InvalidTokenError, auth_service.UserNotFoundError):
-        # Any token problem such as a bad signature, expired, or user deleted becomes a 401.
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
 
 
 # --- Endpoints ---
@@ -99,8 +71,4 @@ def login(req: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
 def read_current_user(
     user: User = Depends(get_current_user),
 ) -> User:
-    # If we reach here the token was valid and the user exists. In this case just return them.
-    return user
-    #  serializes the User through UserResponse, which
-    #  emits userId (camelCase) and omits password_hash.
     return user
