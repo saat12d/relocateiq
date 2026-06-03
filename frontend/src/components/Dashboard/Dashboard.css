@@ -238,6 +238,14 @@
   min-height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px;
   background: rgba(255, 252, 246, 0.95); font-weight: 900;
 }
+/* Editable time entry — sits in the third grid column like the old button.
+   The extra class beats `.departure-control input { width: 100% }`. */
+.departure-control .departure-time-input {
+  width: auto; min-height: 38px; padding: 0 10px; border: 1px solid var(--line);
+  border-radius: 8px; background: rgba(255, 252, 246, 0.95); color: var(--ink);
+  font: inherit; font-weight: 900;
+}
+.departure-control .departure-time-input:disabled { opacity: 0.6; }
 
 .zone-panel__header { gap: 12px; min-height: 54px; margin-bottom: 18px; }
 .zone-panel__header button {

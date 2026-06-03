@@ -19,6 +19,8 @@ function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [radiusMiles, setRadiusMiles] = useState(15);
+  // Departure time of day as minutes since midnight (default 7:30 AM).
+  const [departureMinutes, setDepartureMinutes] = useState(450);
 
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const [listingsByZone, setListingsByZone] = useState<
@@ -28,8 +30,13 @@ function DashboardPage() {
 
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
-  // Create the function that calls your backend
-  async function handleCreateSearch(workAddress: string, searchRadius: number) {
+  // Core search call to the backend, shared by the topbar search and the
+  // departure-time slider so both run the exact same scenario request.
+  async function runSearch(
+    workAddress: string,
+    searchRadius: number,
+    departure: number,
+  ) {
     setIsLoading(true);
     setError("");
 
@@ -37,6 +44,7 @@ function DashboardPage() {
       const newScenario = await createScenario({
         workplaceAddress: workAddress,
         maxRadiusMiles: searchRadius,
+        departureTimeMinutes: departure,
         preferences: {},
       });
 
@@ -50,6 +58,20 @@ function DashboardPage() {
       setError(err instanceof Error ? err.message : "Failed to load scenario.");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  // Topbar search: uses the currently selected departure time.
+  function handleCreateSearch(workAddress: string, searchRadius: number) {
+    return runSearch(workAddress, searchRadius, departureMinutes);
+  }
+
+  // Departure slider: re-run the search for the existing workplace/radius so
+  // rankings reflect traffic at the newly chosen time.
+  function handleDepartureCommit(nextDeparture: number) {
+    setDepartureMinutes(nextDeparture);
+    if (scenario) {
+      runSearch(scenario.workplace.address, radiusMiles, nextDeparture);
     }
   }
 
@@ -133,6 +155,9 @@ function DashboardPage() {
               selectedId={selectedZoneId}
               onSelect={setSelectedZoneId}
               workplace={scenario.workplace}
+              departureMinutes={departureMinutes}
+              onDepartureCommit={handleDepartureCommit}
+              isLoading={isLoading}
             />
             <DetailPanel
               selected={selectedRecommendation}

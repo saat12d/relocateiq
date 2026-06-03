@@ -125,7 +125,49 @@ function buildMapData(
   };
 }
 
-function MapChrome() {
+// Convert minutes-since-midnight to a 24h "HH:MM" value for <input type="time">.
+function minutesToTimeValue(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+// Parse an "HH:MM" time input value back into minutes-since-midnight (or null).
+function timeValueToMinutes(value: string): number | null {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return null;
+  return hours * 60 + minutes;
+}
+
+type MapChromeProps = {
+  departureMinutes: number;
+  onDepartureCommit: (minutes: number) => void;
+  isLoading: boolean;
+};
+
+function MapChrome({
+  departureMinutes,
+  onDepartureCommit,
+  isLoading,
+}: MapChromeProps) {
+  // Track the slider value locally so the label updates live while dragging;
+  // only re-run the search when the user releases (commits) the slider.
+  const [draft, setDraft] = useState(departureMinutes);
+
+  // Stay in sync if the parent resets the value (e.g. after a new search).
+  useEffect(() => {
+    setDraft(departureMinutes);
+  }, [departureMinutes]);
+
+  function commit() {
+    if (draft !== departureMinutes) {
+      onDepartureCommit(draft);
+    }
+  }
+
   return (
     <>
       <div className="map-controls" aria-label="Map controls">
@@ -143,12 +185,32 @@ function MapChrome() {
         <strong>Departure</strong>
         <input
           type="range"
-          min="0"
-          max="100"
-          defaultValue="58"
+          min={0}
+          max={1439}
+          step={15}
+          value={draft}
+          disabled={isLoading}
+          onChange={(event) => setDraft(Number(event.target.value))}
+          onMouseUp={commit}
+          onTouchEnd={commit}
+          onKeyUp={commit}
           aria-label="Departure time"
         />
-        <button type="button">7:30 AM</button>
+        <input
+          type="time"
+          className="departure-time-input"
+          value={minutesToTimeValue(draft)}
+          disabled={isLoading}
+          onChange={(event) => {
+            const minutes = timeValueToMinutes(event.target.value);
+            if (minutes !== null) setDraft(minutes);
+          }}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+          }}
+          aria-label="Departure time"
+        />
       </div>
     </>
   );
@@ -159,6 +221,9 @@ type DashboardMapProps = {
   selectedId: string | null;
   onSelect: (id: string) => void;
   workplace: { latitude: number; longitude: number };
+  departureMinutes: number;
+  onDepartureCommit: (minutes: number) => void;
+  isLoading: boolean;
 };
 
 export default function DashboardMap({
@@ -166,6 +231,9 @@ export default function DashboardMap({
   selectedId,
   onSelect,
   workplace,
+  departureMinutes,
+  onDepartureCommit,
+  isLoading,
 }: DashboardMapProps) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapboxMap | null>(null);
@@ -340,7 +408,11 @@ export default function DashboardMap({
   return (
     <section className="map-shell" aria-label="Ranked commute map">
       <div className="dashboard-mapbox" ref={mapContainerRef} />
-      <MapChrome />
+      <MapChrome
+        departureMinutes={departureMinutes}
+        onDepartureCommit={onDepartureCommit}
+        isLoading={isLoading}
+      />
     </section>
   );
 }

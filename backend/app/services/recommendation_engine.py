@@ -14,9 +14,15 @@ class RecommendationEngineError(Exception):
     pass
 
 
-def _next_weekday_rush_hour_epoch() -> int:
+def _next_weekday_epoch(hour: int = 8, minute: int = 0) -> int:
+    """Epoch (seconds) for the next weekday at the given time of day.
+
+    Google Distance Matrix requires departure_time to be in the future, and we
+    want traffic/transit estimates for a normal commuting weekday, so we roll
+    forward to the next Mon-Fri occurrence of the requested time.
+    """
     now = dt.datetime.now()
-    target = now.replace(hour=8, minute=0, second=0, microsecond=0)
+    target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
     if target <= now:
         target = target + dt.timedelta(days=1)
     while target.weekday() >= 5:
@@ -112,8 +118,19 @@ def rerank_with_preferences(
     return ranked
 
 
-async def analyze_zones(raw_zones: list[dict], destination: str, preferences: PreferenceProfile) -> list[Recommendation]:
-    departure_time = _next_weekday_rush_hour_epoch()
+async def analyze_zones(
+    raw_zones: list[dict],
+    destination: str,
+    preferences: PreferenceProfile,
+    departure_time_minutes: int | None = None,
+) -> list[Recommendation]:
+    if departure_time_minutes is None:
+        departure_time = _next_weekday_epoch()
+    else:
+        departure_time = _next_weekday_epoch(
+            hour=departure_time_minutes // 60,
+            minute=departure_time_minutes % 60,
+        )
     try:
         recommendations = await asyncio.gather(
             *[
