@@ -60,7 +60,32 @@ function requireAuthToken(): string {
 }
 
 /**
+ * A single entry in FastAPI's 422 validation error array.
+ * Example: { loc: ["body", "password"], msg: "String should have at least 8 characters" }
+ */
+type ValidationErrorItem = {
+  loc?: (string | number)[];
+  msg?: string;
+};
+
+/**
+ * Turns one FastAPI validation error into a human-readable sentence,
+ * prefixing the offending field name when one is available.
+ * "password: String should have at least 8 characters"
+ */
+function formatValidationItem(item: ValidationErrorItem): string {
+  const msg = item.msg ?? "Invalid value.";
+  // loc is typically ["body", "<field>"]; the last entry is the field name.
+  const field = item.loc?.[item.loc.length - 1];
+  return typeof field === "string" && field !== "body"
+    ? `${field}: ${msg}`
+    : msg;
+}
+
+/**
  * Helper utility to safely parse error messages from failed API responses.
+ * Handles both FastAPI's plain string `detail` (e.g. "Invalid email or password.")
+ * and its 422 validation format where `detail` is an array of error objects.
  * @param {Response} response - The failed fetch Response object.
  * @param {string} fallback - A default error message.
  * @returns {Promise<string>} The parsed error message or the fallback string.
@@ -71,7 +96,18 @@ async function readError(
 ): Promise<string> {
   try {
     const body = await response.json();
-    return typeof body.detail === "string" ? body.detail : fallback;
+
+    // Plain string detail (most non-validation errors).
+    if (typeof body.detail === "string") {
+      return body.detail;
+    }
+
+    // 422 validation errors: detail is an array of { loc, msg, type }.
+    if (Array.isArray(body.detail) && body.detail.length > 0) {
+      return body.detail.map(formatValidationItem).join(" ");
+    }
+
+    return fallback;
   } catch {
     return fallback;
   }

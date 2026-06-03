@@ -42,8 +42,8 @@ export default function Topbar({
             disabled={isLoading}
           />
         </label>
-        <button type="submit" style={{ display: "none" }}>
-          Search
+        <button className="dashboard-search-btn" type="submit" disabled={isLoading}>
+          {isLoading ? "Searching..." : "Search"}
         </button>
       </form>
 

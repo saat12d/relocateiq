@@ -1,5 +1,5 @@
 import React, { FormEvent, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { login, saveAuthToken, signup } from "../../lib/auth";
 import "./Auth.css";
 
@@ -8,14 +8,15 @@ type AuthState = "idle" | "submitting" | "success" | "error";
 
 function Logo() {
   return (
-    <Link className="auth-site-logo" to="/" aria-label="RelocateIQ home">
-      <span className="auth-site-logo__mark">+</span>
+    <Link className="site-logo" to="/" aria-label="RelocateIQ home">
+      <span className="site-logo__mark">+</span>
       <span>RelocateIQ</span>
     </Link>
   );
 }
 
 export default function AuthForm({ mode }: { mode: AuthMode }) {
+  const navigate = useNavigate();
   const [status, setStatus] = useState<AuthState>("idle");
   const [message, setMessage] = useState("");
   const isSignup = mode === "signup";
@@ -37,9 +38,7 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
 
       saveAuthToken(response.access_token);
       setStatus("success");
-      setMessage(
-        "Signed in successfully. Dashboard routing will connect in the next frontend slice.",
-      );
+      navigate("/dashboard");
     } catch (error) {
       setStatus("error");
       setMessage(
