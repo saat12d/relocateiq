@@ -160,6 +160,34 @@ export async function putWithAuth(
 }
 
 /**
+ * Makes an authenticated PATCH request.
+ * @param {string} path - The relative API endpoint path.
+ * @param {object} [data] - The JSON payload to send.
+ * @returns {Promise<Response>} The raw fetch Response.
+ */
+export async function patchWithAuth(
+  path: string,
+  data?: object,
+): Promise<Response> {
+  const token = requireAuthToken();
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+
+  const options: RequestInit = {
+    method: "PATCH",
+    headers,
+  };
+
+  if (data !== undefined) {
+    options.body = JSON.stringify(data);
+  }
+
+  return fetch(`${API_BASE_URL}${path}`, options);
+}
+
+/**
  * Makes an authenticated DELETE request.
  * @param {string} path - The relative API endpoint path.
  * @returns {Promise<Response>} The raw fetch Response.
