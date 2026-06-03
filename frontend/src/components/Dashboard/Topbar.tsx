@@ -1,18 +1,27 @@
 import React, { FormEvent } from "react";
 
 type TopbarProps = {
-  onSearch: (address: string) => void;
+  onSearch: (address: string, radiusMiles: number) => void;
   isLoading: boolean;
+  radiusMiles: number;
+  onRadiusChange: (radiusMiles: number) => void;
 };
 
-export default function Topbar({ onSearch, isLoading }: TopbarProps) {
+const radiusOptions = [5, 10, 15, 25, 50];
+
+export default function Topbar({
+  onSearch,
+  isLoading,
+  radiusMiles,
+  onRadiusChange,
+}: TopbarProps) {
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const address = String(form.get("workplace"));
 
     if (address.trim()) {
-      onSearch(address);
+      onSearch(address, radiusMiles);
     }
   }
 
@@ -39,8 +48,19 @@ export default function Topbar({ onSearch, isLoading }: TopbarProps) {
       </form>
 
       <div className="dashboard-radius">
-        <small>Search radius</small>
-        <strong>15 mi</strong>
+        <label htmlFor="dashboard-radius">Search radius</label>
+        <select
+          id="dashboard-radius"
+          value={radiusMiles}
+          disabled={isLoading}
+          onChange={(event) => onRadiusChange(Number(event.target.value))}
+        >
+          {radiusOptions.map((option) => (
+            <option key={option} value={option}>
+              {option} mi
+            </option>
+          ))}
+        </select>
       </div>
       <div className="mode-toggle" aria-label="Commute mode">
         <button className="is-active" type="button">

@@ -104,6 +104,7 @@ export interface Recommendation {
   explanationSummary: string;
   commuteAnalysis: CommuteAnalysis;
   lifestyleAnalysis: LifestyleAnalysis;
+  zone: Zone;
 }
 
 /**

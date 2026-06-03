@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Topbar from "../components/Dashboard/Topbar";
 import ResultsPanel from "../components/Dashboard/ResultsPanel";
 import DashboardMap from "../components/Dashboard/DashboardMap";
@@ -8,32 +8,40 @@ import "../components/Dashboard/Dashboard.css";
 
 import { withRequirements, userSignedInRequirement } from "../lib/Requirements";
 
-import { createScenario } from "../services/scenario";
-import type { CommuteScenario } from "../models/types";
+import { createScenario, fetchZoneListings } from "../services/scenario";
+import type { CommuteScenario, HousingListing } from "../models/types";
+
+type ListingsStatus = "idle" | "loading" | "error";
 
 function DashboardPage() {
   // Set up state for the API data and loading status
   const [scenario, setScenario] = useState<CommuteScenario | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [radiusMiles, setRadiusMiles] = useState(15);
 
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
+  const [listingsByZone, setListingsByZone] = useState<
+    Record<string, HousingListing[]>
+  >({});
+  const [listingsStatus, setListingsStatus] = useState<ListingsStatus>("idle");
 
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   // Create the function that calls your backend
-  async function handleCreateSearch(workAddress: string) {
+  async function handleCreateSearch(workAddress: string, searchRadius: number) {
     setIsLoading(true);
     setError("");
 
     try {
       const newScenario = await createScenario({
         workplaceAddress: workAddress,
-        maxRadiusMiles: 15,
+        maxRadiusMiles: searchRadius,
         preferences: {},
       });
 
       setScenario(newScenario);
+      setListingsByZone({});
 
       if (newScenario.recommendations.length > 0) {
         setSelectedZoneId(newScenario.recommendations[0].zone.zoneId);
@@ -70,10 +78,44 @@ function DashboardPage() {
     (rec) => rec.zone.zoneId === selectedZoneId,
   );
 
+  useEffect(() => {
+    if (!selectedZoneId || listingsByZone[selectedZoneId]) {
+      setListingsStatus("idle");
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadListings() {
+      setListingsStatus("loading");
+      try {
+        const listings = await fetchZoneListings(selectedZoneId);
+        if (cancelled) return;
+        setListingsByZone((current) => ({
+          ...current,
+          [selectedZoneId]: listings,
+        }));
+        setListingsStatus("idle");
+      } catch (err) {
+        if (!cancelled) setListingsStatus("error");
+      }
+    }
+
+    loadListings();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedZoneId, listingsByZone]);
+
   return (
     <main className="dashboard-page">
       {/* Pass the search function down to the Topbar */}
-      <Topbar onSearch={handleCreateSearch} isLoading={isLoading} />
+      <Topbar
+        onSearch={handleCreateSearch}
+        isLoading={isLoading}
+        radiusMiles={radiusMiles}
+        onRadiusChange={setRadiusMiles}
+      />
 
       {error && <div className="dashboard-error">{error}</div>}
 
@@ -96,6 +138,10 @@ function DashboardPage() {
               selected={selectedRecommendation}
               isGenerating={isGeneratingAI}
               onGenerateInsight={handleGenerateInsight}
+              listings={
+                selectedZoneId ? (listingsByZone[selectedZoneId] ?? []) : []
+              }
+              listingsStatus={listingsStatus}
             />
           </>
         ) : (
