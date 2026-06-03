@@ -1,5 +1,5 @@
 import React from "react";
-import type { CommuteScenario } from "../models/types";
+import type { CommuteScenario, HousingListing } from "../models/types";
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
   const tone = value >= 70 ? "green" : value >= 60 ? "amber" : "red";
@@ -24,12 +24,16 @@ type DetailPanelProps = {
   selected: Recommendation;
   isGenerating: boolean;
   onGenerateInsight: () => void;
+  listings: HousingListing[];
+  listingsStatus: "idle" | "loading" | "error";
 };
 
 export default function DetailPanel({
   selected,
   isGenerating,
   onGenerateInsight,
+  listings,
+  listingsStatus,
 }: DetailPanelProps) {
   const tone =
     selected.rank === 1 ? "green" : selected.rank <= 3 ? "amber" : "red";
@@ -118,8 +122,12 @@ export default function DetailPanel({
           <a href="#listings">View all</a>
         </div>
         <div className="listing-grid">
-          {selected.listings && selected.listings.length > 0 ? (
-            selected.listings.map((listing, index) => (
+          {listingsStatus === "loading" ? (
+            <p>Loading listings...</p>
+          ) : listingsStatus === "error" ? (
+            <p>Unable to load listings for this area.</p>
+          ) : listings.length > 0 ? (
+            listings.map((listing, index) => (
               <article className="listing-card" key={listing.listingId}>
                 <div
                   className={`listing-photo listing-photo--${(index % 3) + 1}`}

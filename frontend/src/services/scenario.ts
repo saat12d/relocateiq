@@ -1,5 +1,9 @@
 import { getWithAuth, patchWithAuth, postWithAuth } from "../lib/auth";
-import type { CommuteScenario, PreferenceProfile } from "../models/types";
+import type {
+  CommuteScenario,
+  HousingListing,
+  PreferenceProfile,
+} from "../models/types";
 
 // Matching the CreateScenarioRequest Pydantic schema
 export type CreateScenarioPayload = {
@@ -78,6 +82,22 @@ export async function explainScenario(
 
   if (!response.ok) {
     throw new Error("Failed to generate AI explanation");
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetches housing listings for a ranked zone.
+ * Maps to: GET /api/v1/zones/{zone_id}/listings
+ */
+export async function fetchZoneListings(
+  zoneId: string,
+): Promise<HousingListing[]> {
+  const response = await getWithAuth(`/api/v1/zones/${zoneId}/listings`);
+
+  if (!response.ok) {
+    throw new Error("Failed to load listings for this neighborhood.");
   }
 
   return response.json();
