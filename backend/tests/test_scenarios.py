@@ -499,3 +499,115 @@ async def test_refine_scenario_returns_502_on_ai_failure(monkeypatch):
 # [GenAI Use] Reflection: Mocked AI at the scenario_service import path so tests stay
 # offline, just like we learned in the testability lecture. Reused _create_ranked_scenario for explain/refine setup. Kept assertions on status codes and response fields from the
 # public API contract rather than OpenAI payload shapes.
+
+# [GenAI Use] Prompt: "Generate hermetic pytest tests for the optional departureTimeMinutes
+# field on POST /api/v1/scenarios: assert it is forwarded to the Distance Matrix
+# departure_time param, defaults to 8:00 AM when omitted, and is validated to [0, 1439].
+# Also unit-test _next_weekday_epoch."
+# [GenAI Use] LLM Response Start
+def _captured_departure_matrix(captured: dict):
+    """respx side-effect that records the departure_time param on each matrix call."""
+
+    def _responder(request: httpx.Request) -> httpx.Response:
+        captured["departure_time"] = request.url.params.get("departure_time")
+        if request.url.params.get("mode") == "transit":
+            return httpx.Response(200, json=_transit_matrix_payload())
+        return httpx.Response(200, json=_drive_matrix_payload())
+
+    return _responder
+
+
+def test_next_weekday_epoch_uses_requested_time_of_day():
+    import datetime as dt
+
+    from app.services.recommendation_engine import _next_weekday_epoch
+
+    target = dt.datetime.fromtimestamp(_next_weekday_epoch(hour=7, minute=30))
+
+    assert target > dt.datetime.now()  # Google requires a future departure_time
+    assert target.weekday() < 5  # Monday-Friday only
+    assert target.hour == 7 and target.minute == 30
+
+
+@respx.mock
+async def test_create_scenario_forwards_departure_time_to_distance_matrix():
+    import datetime as dt
+
+    respx.get(GEOCODING_URL).mock(
+        return_value=httpx.Response(200, json=_geocode_ok_payload())
+    )
+    captured: dict = {}
+    respx.get(DISTANCE_MATRIX_URL).mock(side_effect=_captured_departure_matrix(captured))
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        response = await client.post(
+            "/api/v1/scenarios",
+            json={
+                "workplaceAddress": "UCLA, Los Angeles, CA",
+                "maxRadiusMiles": 15,
+                "departureTimeMinutes": 450,  # 7:30 AM
+            },
+        )
+
+    assert response.status_code == 201
+    assert captured["departure_time"] is not None
+    forwarded = dt.datetime.fromtimestamp(int(captured["departure_time"]))
+    assert forwarded.hour == 7 and forwarded.minute == 30
+    assert forwarded.weekday() < 5
+
+
+@respx.mock
+async def test_create_scenario_defaults_departure_time_when_omitted():
+    import datetime as dt
+
+    respx.get(GEOCODING_URL).mock(
+        return_value=httpx.Response(200, json=_geocode_ok_payload())
+    )
+    captured: dict = {}
+    respx.get(DISTANCE_MATRIX_URL).mock(side_effect=_captured_departure_matrix(captured))
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        response = await client.post(
+            "/api/v1/scenarios",
+            json={"workplaceAddress": "UCLA, Los Angeles, CA", "maxRadiusMiles": 15},
+        )
+
+    assert response.status_code == 201
+    assert captured["departure_time"] is not None
+    forwarded = dt.datetime.fromtimestamp(int(captured["departure_time"]))
+    assert forwarded.hour == 8 and forwarded.minute == 0  # default rush hour
+
+
+async def test_create_scenario_rejects_out_of_range_departure_time():
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        too_late = await client.post(
+            "/api/v1/scenarios",
+            json={
+                "workplaceAddress": "UCLA, Los Angeles, CA",
+                "maxRadiusMiles": 15,
+                "departureTimeMinutes": 1500,  # > 1439
+            },
+        )
+        negative = await client.post(
+            "/api/v1/scenarios",
+            json={
+                "workplaceAddress": "UCLA, Los Angeles, CA",
+                "maxRadiusMiles": 15,
+                "departureTimeMinutes": -10,
+            },
+        )
+
+    assert too_late.status_code == 422
+    assert negative.status_code == 422
+# [GenAI Use] LLM Response End
+# [GenAI Use] Reflection: Asserted on the forwarded departure_time via a respx
+# side-effect; kept _next_weekday_epoch assertions time-of-day-stable so CI never flakes.

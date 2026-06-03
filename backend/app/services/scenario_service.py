@@ -79,6 +79,7 @@ async def create_scenario(req: CreateScenarioRequest) -> ScenarioResponse:
             raw_zones=zones,
             destination=geocoded["formatted_address"],
             preferences=preferences,
+            departure_time_minutes=req.departure_time_minutes,
         )
     except RecommendationEngineError as exc:
         update_status(scenario_id, ScenarioStatus.FAILED)

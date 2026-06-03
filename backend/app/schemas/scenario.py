@@ -19,6 +19,11 @@ class CreateScenarioRequest(BaseModel):
 
     workplace_address: str = Field(..., min_length=1, alias="workplaceAddress")
     max_radius_miles: float = Field(..., ge=0.5, le=50, alias="maxRadiusMiles")
+    # Departure time of day as minutes since midnight (e.g. 450 = 7:30 AM).
+    # When omitted, the engine falls back to the default weekday rush hour.
+    departure_time_minutes: int | None = Field(
+        None, ge=0, le=1439, alias="departureTimeMinutes"
+    )
 
 
 class UpdatePreferencesRequest(BaseModel):

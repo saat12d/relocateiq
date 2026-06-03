@@ -9,6 +9,8 @@ import type {
 export type CreateScenarioPayload = {
   workplaceAddress: string;
   maxRadiusMiles: number;
+  // Departure time of day as minutes since midnight (e.g. 450 = 7:30 AM).
+  departureTimeMinutes?: number;
   preferences: Partial<PreferenceProfile>;
 };
 
