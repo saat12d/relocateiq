@@ -8,8 +8,8 @@ type AuthState = "idle" | "submitting" | "success" | "error";
 
 function Logo() {
   return (
-    <Link className="auth-site-logo" to="/" aria-label="RelocateIQ home">
-      <span className="auth-site-logo__mark">+</span>
+    <Link className="site-logo" to="/" aria-label="RelocateIQ home">
+      <span className="site-logo__mark">+</span>
       <span>RelocateIQ</span>
     </Link>
   );
@@ -37,6 +37,7 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
         : await login({ email, password });
 
       saveAuthToken(response.access_token);
+      setStatus("success");
       navigate("/dashboard", { replace: true });
     } catch (error) {
       setStatus("error");
