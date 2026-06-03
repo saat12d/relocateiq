@@ -3,7 +3,7 @@ import Topbar from "../components/Dashboard/Topbar";
 import ResultsPanel from "../components/Dashboard/ResultsPanel";
 import DashboardMap from "../components/Dashboard/DashboardMap";
 import DetailPanel from "../components/Dashboard/DetailPanel";
-import { neighborhoods } from "../components/Dashboard/data";
+import { explainScenario } from "../services/scenario";
 import "../components/Dashboard/Dashboard.css";
 
 import { withRequirements, userSignedInRequirement } from "../lib/Requirements";
@@ -18,6 +18,8 @@ function DashboardPage() {
   const [error, setError] = useState("");
 
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
+
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   // Create the function that calls your backend
   async function handleCreateSearch(workAddress: string) {
@@ -40,6 +42,26 @@ function DashboardPage() {
       setError(err instanceof Error ? err.message : "Failed to load scenario.");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleGenerateInsight() {
+    console.log(1);
+    if (!scenario) return;
+
+    console.log(1);
+
+    setIsGeneratingAI(true);
+    try {
+      const updatedScenario = await explainScenario(scenario.scenarioId);
+      console.log(2);
+
+      setScenario(updatedScenario);
+    } catch (err) {
+      console.error("AI Generation failed:", err);
+      console.log(3);
+    } finally {
+      setIsGeneratingAI(false);
     }
   }
 
@@ -70,7 +92,11 @@ function DashboardPage() {
               onSelect={setSelectedZoneId}
               workplace={scenario.workplace}
             />
-            <DetailPanel selected={selectedRecommendation} />
+            <DetailPanel
+              selected={selectedRecommendation}
+              isGenerating={isGeneratingAI}
+              onGenerateInsight={handleGenerateInsight}
+            />
           </>
         ) : (
           <div className="dashboard-empty-state">

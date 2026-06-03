@@ -62,3 +62,23 @@ export async function updateScenarioPreferences(
 
   return response.json();
 }
+
+/**
+ * Triggers the AI explanation for a ranked scenario.
+ * Maps to: POST /api/v1/scenarios/{scenario_id}/explain
+ */
+export async function explainScenario(
+  scenarioId: string,
+): Promise<CommuteScenario> {
+  // Use postWithAuth to ensure the JWT token is injected and Vite proxies the URL correctly
+  const response = await postWithAuth(
+    `/api/v1/scenarios/${scenarioId}/explain`,
+    {},
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to generate AI explanation");
+  }
+
+  return response.json();
+}
