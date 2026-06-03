@@ -1,5 +1,8 @@
 import React, { FormEvent } from "react";
 
+import LogoutButton from "../Auth/LogoutButton";
+import { useSession } from "../../hooks/useSession";
+
 type TopbarProps = {
   onSearch: (address: string, radiusMiles: number) => void;
   isLoading: boolean;
@@ -15,6 +18,8 @@ export default function Topbar({
   radiusMiles,
   onRadiusChange,
 }: TopbarProps) {
+  const { user, logout } = useSession();
+
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
@@ -73,6 +78,17 @@ export default function Topbar({
         <span />
         Live traffic
       </label>
+      <div className="dashboard-session" aria-label="Account">
+        {user && (
+          <span className="dashboard-user-label" title={user.email}>
+            {user.name}
+          </span>
+        )}
+        <LogoutButton
+          onLogout={logout}
+          className="button button--ghost dashboard-logout"
+        />
+      </div>
     </header>
   );
 }

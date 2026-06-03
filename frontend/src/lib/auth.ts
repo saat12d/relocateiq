@@ -22,6 +22,12 @@ export type SignupPayload = LoginPayload & {
   name: string;
 };
 
+export type CurrentUser = {
+  userId: string;
+  email: string;
+  name: string;
+};
+
 // Token Management
 
 /**
@@ -243,6 +249,23 @@ export async function signup(payload: SignupPayload): Promise<AuthResponse> {
 
   if (!response.ok) {
     throw new Error(await readError(response, "Unable to create account."));
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetches the currently authenticated user profile.
+ * Maps to: GET /api/v1/auth/me
+ */
+export async function fetchMe(): Promise<CurrentUser> {
+  const response = await getWithAuth("/api/v1/auth/me");
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      clearAuthToken();
+    }
+    throw new Error("Unable to load your account.");
   }
 
   return response.json();

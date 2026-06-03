@@ -47,7 +47,29 @@
   font: inherit; font-weight: 900;
 }
 
-.mode-toggle { overflow: hidden; margin-left: auto; border: 1px solid var(--line); border-radius: 9px; background: rgba(255, 253, 248, 0.9); }
+.dashboard-session {
+  flex: 0 0 auto;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.dashboard-user-label {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dashboard-logout {
+  min-height: 42px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.mode-toggle { overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: rgba(255, 253, 248, 0.9); }
 .mode-toggle button {
   min-width: 92px; height: 38px; border: 0; background: transparent;
   color: var(--muted); cursor: pointer; font-weight: 800;
