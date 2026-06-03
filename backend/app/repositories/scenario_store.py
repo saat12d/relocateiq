@@ -19,8 +19,7 @@ from app.schemas.scenario import (
 )
 
 _store: dict[str, ScenarioResponse] = {}
-_DEFAULT_USER_EMAIL = "local-user@relocateiq.dev"
-_DEFAULT_USER_NAME = "Local User"
+_scenario_owners: dict[str, str] = {}
 _DB_READY = True
 _DB_BOOTSTRAPPED = False
 
@@ -78,17 +77,6 @@ def _to_db_status(status: ScenarioStatus, db_status_enum) -> object:
 
 def _to_schema_status(status) -> ScenarioStatus:
     return ScenarioStatus(status.value if hasattr(status, "value") else status)
-
-
-def _ensure_default_user(db: Session, models: dict[str, object]) -> str:
-    User = models["User"]
-    existing = db.scalar(select(User).where(User.email == _DEFAULT_USER_EMAIL))
-    if existing is not None:
-        return existing.user_id
-    user = User(name=_DEFAULT_USER_NAME, email=_DEFAULT_USER_EMAIL)
-    db.add(user)
-    db.flush()
-    return user.user_id
 
 
 def _upsert_zone(db: Session, models: dict[str, object], zone: Zone) -> None:
@@ -166,12 +154,20 @@ def _to_schema_response(db_scenario) -> ScenarioResponse:
     )
 
 
-def _load_scenario_with_relationships(db: Session, models: dict[str, object], scenario_id: str):
+def _load_scenario_with_relationships(
+    db: Session,
+    models: dict[str, object],
+    scenario_id: str,
+    user_id: str,
+):
     CommuteScenario = models["CommuteScenario"]
     RecommendationModel = models["Recommendation"]
     stmt = (
         select(CommuteScenario)
-        .where(CommuteScenario.scenario_id == scenario_id)
+        .where(
+            CommuteScenario.scenario_id == scenario_id,
+            CommuteScenario.user_id == user_id,
+        )
         .options(
             joinedload(CommuteScenario.workplace),
             joinedload(CommuteScenario.preference_profile),
@@ -183,10 +179,11 @@ def _load_scenario_with_relationships(db: Session, models: dict[str, object], sc
     return db.execute(stmt).unique().scalars().first()
 
 
-def save_scenario(scenario: ScenarioResponse) -> None:
+def save_scenario(scenario: ScenarioResponse, user_id: str) -> None:
     db = _get_session()
     if db is None:
         _store[scenario.scenario_id] = deepcopy(scenario)
+        _scenario_owners.setdefault(scenario.scenario_id, user_id)
         return
 
     models = _db_models()
@@ -203,7 +200,7 @@ def save_scenario(scenario: ScenarioResponse) -> None:
         if row is None:
             row = CommuteScenario(
                 scenario_id=scenario.scenario_id,
-                user_id=_ensure_default_user(db, models),
+                user_id=user_id,
                 search_radius_miles=scenario.search_radius_miles,
                 created_at=scenario.created_at,
                 status=_to_db_status(scenario.status, DbScenarioStatus),
@@ -287,13 +284,16 @@ def save_scenario(scenario: ScenarioResponse) -> None:
         db.rollback()
         _disable_db()
         _store[scenario.scenario_id] = deepcopy(scenario)
+        _scenario_owners.setdefault(scenario.scenario_id, user_id)
     finally:
         db.close()
 
 
-def get_scenario(scenario_id: str) -> ScenarioResponse | None:
+def get_scenario(scenario_id: str, user_id: str) -> ScenarioResponse | None:
     db = _get_session()
     if db is None:
+        if _scenario_owners.get(scenario_id) != user_id:
+            return None
         scenario = _store.get(scenario_id)
         if scenario is None:
             return None
@@ -301,12 +301,14 @@ def get_scenario(scenario_id: str) -> ScenarioResponse | None:
 
     models = _db_models()
     try:
-        scenario = _load_scenario_with_relationships(db, models, scenario_id)
+        scenario = _load_scenario_with_relationships(db, models, scenario_id, user_id)
         if scenario is None:
             return None
         return _to_schema_response(scenario)
     except Exception:
         _disable_db()
+        if _scenario_owners.get(scenario_id) != user_id:
+            return None
         fallback = _store.get(scenario_id)
         if fallback is None:
             return None
@@ -315,9 +317,15 @@ def get_scenario(scenario_id: str) -> ScenarioResponse | None:
         db.close()
 
 
-def update_status(scenario_id: str, status: ScenarioStatus) -> ScenarioResponse | None:
+def update_status(
+    scenario_id: str,
+    status: ScenarioStatus,
+    user_id: str,
+) -> ScenarioResponse | None:
     db = _get_session()
     if db is None:
+        if _scenario_owners.get(scenario_id) != user_id:
+            return None
         scenario = _store.get(scenario_id)
         if scenario is None:
             return None
@@ -327,7 +335,7 @@ def update_status(scenario_id: str, status: ScenarioStatus) -> ScenarioResponse 
     models = _db_models()
     DbScenarioStatus = models["ScenarioStatus"]
     try:
-        scenario = _load_scenario_with_relationships(db, models, scenario_id)
+        scenario = _load_scenario_with_relationships(db, models, scenario_id, user_id)
         if scenario is None:
             return None
         scenario.status = _to_db_status(status, DbScenarioStatus)
@@ -337,6 +345,8 @@ def update_status(scenario_id: str, status: ScenarioStatus) -> ScenarioResponse 
     except Exception:
         db.rollback()
         _disable_db()
+        if _scenario_owners.get(scenario_id) != user_id:
+            return None
         fallback = _store.get(scenario_id)
         if fallback is None:
             return None
@@ -344,3 +354,9 @@ def update_status(scenario_id: str, status: ScenarioStatus) -> ScenarioResponse 
         return deepcopy(fallback)
     finally:
         db.close()
+
+
+def reset_memory_store() -> None:
+    """Clear in-memory scenario data (used by tests)."""
+    _store.clear()
+    _scenario_owners.clear()

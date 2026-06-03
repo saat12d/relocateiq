@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAuthToken } from "./auth";
+import { clearAuthToken, fetchMe, getAuthToken } from "./auth";
 
 type Requirement = {
   check: () => Promise<boolean> | boolean;
@@ -56,10 +56,17 @@ export function withRequirements<P extends object>(
 }
 
 export const userSignedInRequirement: Requirement = {
-  check: () => {
-    // Synchronous check: if they have a token, they pass.
-    const token = getAuthToken();
-    return !!token;
+  check: async () => {
+    if (!getAuthToken()) {
+      return false;
+    }
+    try {
+      await fetchMe();
+      return true;
+    } catch {
+      clearAuthToken();
+      return false;
+    }
   },
   redirect: "/login",
 };

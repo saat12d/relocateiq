@@ -29,7 +29,7 @@ from app.services.recommendation_engine import (
 from app.services.zones import discover_zones
 
 
-async def create_scenario(req: CreateScenarioRequest) -> ScenarioResponse:
+async def create_scenario(req: CreateScenarioRequest, user_id: str) -> ScenarioResponse:
     scenario_id = str(uuid4())
     preferences = PreferenceProfile()
 
@@ -42,13 +42,13 @@ async def create_scenario(req: CreateScenarioRequest) -> ScenarioResponse:
         preference_profile=preferences,
         recommendations=[],
     )
-    save_scenario(draft)
-    update_status(scenario_id, ScenarioStatus.SUBMITTED)
+    save_scenario(draft, user_id)
+    update_status(scenario_id, ScenarioStatus.SUBMITTED, user_id)
 
     try:
         geocoded = await geocode_address(req.workplace_address)
     except GeocodingError as exc:
-        update_status(scenario_id, ScenarioStatus.DRAFT)
+        update_status(scenario_id, ScenarioStatus.DRAFT, user_id)
         raise HTTPException(status_code=400, detail=str(exc))
 
     submitted = ScenarioResponse(
@@ -64,7 +64,7 @@ async def create_scenario(req: CreateScenarioRequest) -> ScenarioResponse:
         preference_profile=preferences,
         recommendations=[],
     )
-    save_scenario(submitted)
+    save_scenario(submitted, user_id)
 
     zones = discover_zones(
         workplace_lat=geocoded["latitude"],
@@ -81,7 +81,7 @@ async def create_scenario(req: CreateScenarioRequest) -> ScenarioResponse:
             preferences=preferences,
         )
     except RecommendationEngineError as exc:
-        update_status(scenario_id, ScenarioStatus.FAILED)
+        update_status(scenario_id, ScenarioStatus.FAILED, user_id)
         raise HTTPException(status_code=503, detail=str(exc))
 
     ranked = ScenarioResponse(
@@ -93,7 +93,7 @@ async def create_scenario(req: CreateScenarioRequest) -> ScenarioResponse:
         preference_profile=preferences,
         recommendations=recommendations,
     )
-    save_scenario(ranked)
+    save_scenario(ranked, user_id)
     return ranked
 
 
@@ -119,8 +119,12 @@ async def create_scenario(req: CreateScenarioRequest) -> ScenarioResponse:
 _UPDATABLE_STATUSES = {ScenarioStatus.RANKED, ScenarioStatus.EXPLAINED, ScenarioStatus.SAVED}
 
 
-def update_preferences(scenario_id: str, req: UpdatePreferencesRequest) -> ScenarioResponse:
-    scenario = get_scenario(scenario_id)
+def update_preferences(
+    scenario_id: str,
+    req: UpdatePreferencesRequest,
+    user_id: str,
+) -> ScenarioResponse:
+    scenario = get_scenario(scenario_id, user_id)
     if scenario is None:
         raise HTTPException(status_code=404, detail="Scenario not found")
     if scenario.status not in _UPDATABLE_STATUSES:
@@ -145,7 +149,7 @@ def update_preferences(scenario_id: str, req: UpdatePreferencesRequest) -> Scena
         profile.max_commute_minutes = req.max_commute_minutes
 
     scenario.recommendations = rerank_with_preferences(scenario.recommendations, profile)
-    save_scenario(scenario)
+    save_scenario(scenario, user_id)
     return scenario
 # [GenAI Use] LLM Response End
 # [GenAI Use] Reflection: Mostly accepted as-is. Used a set for the state guard
@@ -194,8 +198,8 @@ def _apply_ai_profile_patch(profile: PreferenceProfile, patch: dict) -> None:
         profile.prefers_transit = False
 
 
-async def explain_scenario(scenario_id: str) -> ScenarioResponse:
-    scenario = get_scenario(scenario_id)
+async def explain_scenario(scenario_id: str, user_id: str) -> ScenarioResponse:
+    scenario = get_scenario(scenario_id, user_id)
     if scenario is None:
         raise HTTPException(status_code=404, detail="Scenario not found")
     if scenario.status != ScenarioStatus.RANKED:
@@ -216,12 +220,16 @@ async def explain_scenario(scenario_id: str) -> ScenarioResponse:
     for rec, summary in zip(scenario.recommendations, summaries):
         rec.explanation_summary = summary
     scenario.status = ScenarioStatus.EXPLAINED
-    save_scenario(scenario)
+    save_scenario(scenario, user_id)
     return scenario
 
 
-async def refine_scenario(scenario_id: str, req: RefineScenarioRequest) -> RefineScenarioResponse:
-    scenario = get_scenario(scenario_id)
+async def refine_scenario(
+    scenario_id: str,
+    req: RefineScenarioRequest,
+    user_id: str,
+) -> RefineScenarioResponse:
+    scenario = get_scenario(scenario_id, user_id)
     if scenario is None:
         raise HTTPException(status_code=404, detail="Scenario not found")
     if scenario.status not in _REFINABLE_STATUSES:
@@ -247,5 +255,5 @@ async def refine_scenario(scenario_id: str, req: RefineScenarioRequest) -> Refin
         preferences=scenario.preference_profile,
     )
     scenario.status = ScenarioStatus.EXPLAINED
-    save_scenario(scenario)
+    save_scenario(scenario, user_id)
     return RefineScenarioResponse(scenario=scenario, explanation_summary=explanation_summary)
