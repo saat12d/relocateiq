@@ -46,6 +46,37 @@
 }
 .dashboard-search-btn:disabled { opacity: 0.6; cursor: default; }
 
+.dashboard-empty-state {
+  margin: auto; color: var(--muted);
+  font-family: inherit; font-size: 15px; font-weight: 750;
+}
+
+.generate-ai-button {
+  align-self: flex-start; padding: 10px 18px; border: 1px solid var(--line);
+  border-radius: 10px; background: rgba(255, 253, 248, 0.9); color: var(--ink);
+  font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer;
+}
+.generate-ai-button:disabled { opacity: 0.6; cursor: default; }
+
+.listing-link {
+  display: inline-block; margin-top: 6px; color: var(--green);
+  font-family: inherit; font-size: 13px; font-weight: 800;
+}
+.listing-link:hover { text-decoration: underline; }
+
+/* Error banner shown above the workspace (e.g. failed search) */
+.dashboard-error {
+  margin: 14px 24px 0; padding: 12px 16px; border: 1px solid rgba(216, 79, 63, 0.35);
+  border-radius: 10px; background: rgba(216, 79, 63, 0.08); color: var(--red);
+  font-family: inherit; font-size: 13px; font-weight: 800;
+}
+
+/* Status messages (loading / empty / error) inside the listings grid */
+.listing-grid > p {
+  grid-column: 1 / -1; margin: 0; color: var(--muted);
+  font-family: inherit; font-size: 13px; font-weight: 750;
+}
+
 .dashboard-radius { gap: 10px; color: var(--muted); font-size: 12px; font-weight: 800; }
 .dashboard-radius label { white-space: nowrap; }
 .dashboard-radius select {
