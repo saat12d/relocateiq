@@ -1,5 +1,5 @@
 import React, { FormEvent, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { login, saveAuthToken, signup } from "../../lib/auth";
 import "./Auth.css";
 
@@ -16,6 +16,7 @@ function Logo() {
 }
 
 export default function AuthForm({ mode }: { mode: AuthMode }) {
+  const navigate = useNavigate();
   const [status, setStatus] = useState<AuthState>("idle");
   const [message, setMessage] = useState("");
   const isSignup = mode === "signup";
@@ -36,10 +37,7 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
         : await login({ email, password });
 
       saveAuthToken(response.access_token);
-      setStatus("success");
-      setMessage(
-        "Signed in successfully. Dashboard routing will connect in the next frontend slice.",
-      );
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       setStatus("error");
       setMessage(
