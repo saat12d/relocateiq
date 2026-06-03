@@ -64,8 +64,22 @@ def _transit_matrix_payload() -> dict:
     }
 
 
+async def test_create_scenario_requires_auth():
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        response = await client.post(
+            "/api/v1/scenarios",
+            json={"workplaceAddress": "UCLA, Los Angeles, CA", "maxRadiusMiles": 15},
+        )
+
+    assert response.status_code in (401, 403)
+
+
 @respx.mock
-async def test_create_scenario_returns_ranked_recommendations():
+async def test_create_scenario_returns_ranked_recommendations(authenticated_client):
+    client, _user_id = authenticated_client
     geocode_route = respx.get(GEOCODING_URL).mock(
         return_value=httpx.Response(200, json=_geocode_ok_payload())
     )
@@ -78,14 +92,10 @@ async def test_create_scenario_returns_ranked_recommendations():
 
     matrix_route = respx.get(DISTANCE_MATRIX_URL).mock(side_effect=matrix_response)
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        response = await client.post(
-            "/api/v1/scenarios",
-            json={"workplaceAddress": "UCLA, Los Angeles, CA", "maxRadiusMiles": 15},
-        )
+    response = await client.post(
+        "/api/v1/scenarios",
+        json={"workplaceAddress": "UCLA, Los Angeles, CA", "maxRadiusMiles": 15},
+    )
 
     assert geocode_route.called
     assert matrix_route.called
@@ -99,51 +109,42 @@ async def test_create_scenario_returns_ranked_recommendations():
     assert "commuteAnalysis" in payload["recommendations"][0]
 
 
-async def test_create_scenario_rejects_invalid_radius():
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        response = await client.post(
-            "/api/v1/scenarios",
-            json={"workplaceAddress": "UCLA, Los Angeles, CA", "maxRadiusMiles": 0.1},
-        )
+async def test_create_scenario_rejects_invalid_radius(authenticated_client):
+    client, _user_id = authenticated_client
+    response = await client.post(
+        "/api/v1/scenarios",
+        json={"workplaceAddress": "UCLA, Los Angeles, CA", "maxRadiusMiles": 0.1},
+    )
 
     assert response.status_code == 422
 
 
 @respx.mock
-async def test_create_scenario_returns_400_for_bad_address():
+async def test_create_scenario_returns_400_for_bad_address(authenticated_client):
+    client, _user_id = authenticated_client
     respx.get(GEOCODING_URL).mock(
         return_value=httpx.Response(200, json={"status": "ZERO_RESULTS", "results": []})
     )
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        response = await client.post(
-            "/api/v1/scenarios",
-            json={"workplaceAddress": "not-a-real-address", "maxRadiusMiles": 10},
-        )
+    response = await client.post(
+        "/api/v1/scenarios",
+        json={"workplaceAddress": "not-a-real-address", "maxRadiusMiles": 10},
+    )
 
     assert response.status_code == 400
     assert "could not be geocoded" in response.json()["detail"].lower()
 
 
 @respx.mock
-async def test_create_scenario_returns_503_when_matrix_fails():
+async def test_create_scenario_returns_503_when_matrix_fails(authenticated_client):
+    client, _user_id = authenticated_client
     respx.get(GEOCODING_URL).mock(return_value=httpx.Response(200, json=_geocode_ok_payload()))
     respx.get(DISTANCE_MATRIX_URL).mock(return_value=httpx.Response(500))
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        response = await client.post(
-            "/api/v1/scenarios",
-            json={"workplaceAddress": "UCLA, Los Angeles, CA", "maxRadiusMiles": 15},
-        )
+    response = await client.post(
+        "/api/v1/scenarios",
+        json={"workplaceAddress": "UCLA, Los Angeles, CA", "maxRadiusMiles": 15},
+    )
 
     assert response.status_code == 503
 
@@ -184,20 +185,46 @@ async def _create_ranked_scenario(client: httpx.AsyncClient) -> dict:
     return response.json()
 
 
-async def test_update_preferences_reranks_and_filters_zones():
+@respx.mock
+async def test_fetch_scenario_returns_404_for_other_user(authenticated_client):
+    owner_client, _owner_id = authenticated_client
+    scenario = await _create_ranked_scenario(owner_client)
+    scenario_id = scenario["scenarioId"]
+
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app),
         base_url="http://test",
-    ) as client:
-        scenario = await _create_ranked_scenario(client)
-        scenario_id = scenario["scenarioId"]
-        original_count = len(scenario["recommendations"])
-        assert original_count > 0
-
-        response = await client.patch(
-            f"/api/v1/scenarios/{scenario_id}/preferences",
-            json={"prefersTransit": True, "avoidHighways": True, "maxCommuteMinutes": 30},
+    ) as guest_client:
+        other_signup = await guest_client.post(
+            "/api/v1/auth/signup",
+            json={
+                "email": "other-user@example.com",
+                "name": "Other User",
+                "password": "password123",
+            },
         )
+        assert other_signup.status_code == 201
+        other_token = other_signup.json()["access_token"]
+        response = await guest_client.get(
+            f"/api/v1/scenarios/{scenario_id}",
+            headers={"Authorization": f"Bearer {other_token}"},
+        )
+
+    assert response.status_code == 404
+
+
+@respx.mock
+async def test_update_preferences_reranks_and_filters_zones(authenticated_client):
+    client, _user_id = authenticated_client
+    scenario = await _create_ranked_scenario(client)
+    scenario_id = scenario["scenarioId"]
+    original_count = len(scenario["recommendations"])
+    assert original_count > 0
+
+    response = await client.patch(
+        f"/api/v1/scenarios/{scenario_id}/preferences",
+        json={"prefersTransit": True, "avoidHighways": True, "maxCommuteMinutes": 30},
+    )
 
     assert response.status_code == 200
     payload = response.json()
@@ -211,19 +238,17 @@ async def test_update_preferences_reranks_and_filters_zones():
         assert rec["commuteAnalysis"]["transitTimePeakMinutes"] <= 30
 
 
-async def test_update_preferences_removes_zones_exceeding_max_commute():
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        scenario = await _create_ranked_scenario(client)
-        scenario_id = scenario["scenarioId"]
+@respx.mock
+async def test_update_preferences_removes_zones_exceeding_max_commute(authenticated_client):
+    client, _user_id = authenticated_client
+    scenario = await _create_ranked_scenario(client)
+    scenario_id = scenario["scenarioId"]
 
-        # Drive time from mock is 18 mins with traffic; cap at 5 should remove everything.
-        response = await client.patch(
-            f"/api/v1/scenarios/{scenario_id}/preferences",
-            json={"maxCommuteMinutes": 5},
-        )
+    # Drive time from mock is 18 mins with traffic; cap at 5 should remove everything.
+    response = await client.patch(
+        f"/api/v1/scenarios/{scenario_id}/preferences",
+        json={"maxCommuteMinutes": 5},
+    )
 
     assert response.status_code == 200
     payload = response.json()
@@ -231,36 +256,32 @@ async def test_update_preferences_removes_zones_exceeding_max_commute():
     assert payload["recommendations"] == []
 
 
-async def test_update_preferences_returns_404_for_unknown_scenario():
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        response = await client.patch(
-            "/api/v1/scenarios/does-not-exist/preferences",
-            json={"prefersTransit": True},
-        )
+async def test_update_preferences_returns_404_for_unknown_scenario(authenticated_client):
+    client, _user_id = authenticated_client
+    response = await client.patch(
+        "/api/v1/scenarios/does-not-exist/preferences",
+        json={"prefersTransit": True},
+    )
 
     assert response.status_code == 404
 
 
-async def test_update_preferences_rejects_out_of_range_max_commute():
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        scenario = await _create_ranked_scenario(client)
-        scenario_id = scenario["scenarioId"]
+@respx.mock
+async def test_update_preferences_rejects_out_of_range_max_commute(authenticated_client):
+    client, _user_id = authenticated_client
+    scenario = await _create_ranked_scenario(client)
+    scenario_id = scenario["scenarioId"]
 
-        response = await client.patch(
-            f"/api/v1/scenarios/{scenario_id}/preferences",
-            json={"maxCommuteMinutes": 120},
-        )
+    response = await client.patch(
+        f"/api/v1/scenarios/{scenario_id}/preferences",
+        json={"maxCommuteMinutes": 120},
+    )
 
     assert response.status_code == 422
 
 
-async def test_update_preferences_returns_409_when_scenario_not_ranked():
+async def test_update_preferences_returns_409_when_scenario_not_ranked(authenticated_client):
+    client, user_id = authenticated_client
     from app.repositories.scenario_store import save_scenario
     from app.schemas.scenario import (
         PreferenceProfile,
@@ -279,16 +300,13 @@ async def test_update_preferences_returns_409_when_scenario_not_ranked():
         preference_profile=PreferenceProfile(),
         recommendations=[],
     )
-    save_scenario(draft)
+    save_scenario(draft, user_id)
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        response = await client.patch(
-            "/api/v1/scenarios/draft-scenario/preferences",
-            json={"prefersTransit": True},
-        )
+    client, _user_id = authenticated_client
+    response = await client.patch(
+        "/api/v1/scenarios/draft-scenario/preferences",
+        json={"prefersTransit": True},
+    )
 
     assert response.status_code == 409
 
@@ -313,7 +331,8 @@ async def test_update_preferences_returns_409_when_scenario_not_ranked():
 # Criteria: hermetic tests, Arrange-Act-Assert, assert HTTP contract and state
 # machine preconditions, not implementation details of prompts."
 # [GenAI Use] LLM Response Start
-async def test_explain_scenario_populates_explanations(monkeypatch):
+@respx.mock
+async def test_explain_scenario_populates_explanations(authenticated_client, monkeypatch):
     async def _fake_generate_zone_summaries(**kwargs):
         recommendations = kwargs["recommendations"]
         return [f"Explanation for {rec.zone.name}" for rec in recommendations]
@@ -323,14 +342,11 @@ async def test_explain_scenario_populates_explanations(monkeypatch):
         _fake_generate_zone_summaries,
     )
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        scenario = await _create_ranked_scenario(client)
-        scenario_id = scenario["scenarioId"]
+    client, _user_id = authenticated_client
+    scenario = await _create_ranked_scenario(client)
+    scenario_id = scenario["scenarioId"]
 
-        response = await client.post(f"/api/v1/scenarios/{scenario_id}/explain")
+    response = await client.post(f"/api/v1/scenarios/{scenario_id}/explain")
 
     assert response.status_code == 200
     payload = response.json()
@@ -338,7 +354,8 @@ async def test_explain_scenario_populates_explanations(monkeypatch):
     assert payload["recommendations"][0]["explanationSummary"] != ""
 
 
-async def test_explain_scenario_returns_409_when_not_ranked():
+async def test_explain_scenario_returns_409_when_not_ranked(authenticated_client):
+    client, user_id = authenticated_client
     from app.repositories.scenario_store import save_scenario
     from app.schemas.scenario import (
         PreferenceProfile,
@@ -357,18 +374,15 @@ async def test_explain_scenario_returns_409_when_not_ranked():
         preference_profile=PreferenceProfile(),
         recommendations=[],
     )
-    save_scenario(draft)
+    save_scenario(draft, user_id)
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        response = await client.post("/api/v1/scenarios/analyzing-scenario/explain")
+    response = await client.post("/api/v1/scenarios/analyzing-scenario/explain")
 
     assert response.status_code == 409
 
 
-async def test_refine_scenario_updates_profile_and_reranks(monkeypatch):
+@respx.mock
+async def test_refine_scenario_updates_profile_and_reranks(authenticated_client, monkeypatch):
     async def _fake_generate_zone_summaries(**kwargs):
         recommendations = kwargs["recommendations"]
         return [f"Explanation for {rec.zone.name}" for rec in recommendations]
@@ -392,19 +406,16 @@ async def test_refine_scenario_updates_profile_and_reranks(monkeypatch):
         _fake_parse_refinement,
     )
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        scenario = await _create_ranked_scenario(client)
-        scenario_id = scenario["scenarioId"]
-        explain_response = await client.post(f"/api/v1/scenarios/{scenario_id}/explain")
-        assert explain_response.status_code == 200
+    client, _user_id = authenticated_client
+    scenario = await _create_ranked_scenario(client)
+    scenario_id = scenario["scenarioId"]
+    explain_response = await client.post(f"/api/v1/scenarios/{scenario_id}/explain")
+    assert explain_response.status_code == 200
 
-        response = await client.post(
-            f"/api/v1/scenarios/{scenario_id}/refine",
-            json={"userMessage": "I prefer quieter neighborhoods and transit options."},
-        )
+    response = await client.post(
+        f"/api/v1/scenarios/{scenario_id}/refine",
+        json={"userMessage": "I prefer quieter neighborhoods and transit options."},
+    )
 
     assert response.status_code == 200
     payload = response.json()
@@ -415,7 +426,11 @@ async def test_refine_scenario_updates_profile_and_reranks(monkeypatch):
     assert payload["scenario"]["preferenceProfile"]["maxCommuteMinutes"] == 30
 
 
-async def test_refine_scenario_returns_422_when_clarification_required(monkeypatch):
+@respx.mock
+async def test_refine_scenario_returns_422_when_clarification_required(
+    authenticated_client,
+    monkeypatch,
+):
     from app.services.ai_explanation import AIClarificationRequired
 
     async def _fake_parse_refinement(**kwargs):
@@ -426,45 +441,41 @@ async def test_refine_scenario_returns_422_when_clarification_required(monkeypat
         _fake_parse_refinement,
     )
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        scenario = await _create_ranked_scenario(client)
-        scenario_id = scenario["scenarioId"]
+    client, user_id = authenticated_client
+    scenario = await _create_ranked_scenario(client)
+    scenario_id = scenario["scenarioId"]
 
-        from app.repositories.scenario_store import get_scenario, save_scenario
-        from app.schemas.scenario import ScenarioStatus
+    from app.repositories.scenario_store import get_scenario, save_scenario
+    from app.schemas.scenario import ScenarioStatus
 
-        seeded = get_scenario(scenario_id)
-        seeded.status = ScenarioStatus.EXPLAINED
-        save_scenario(seeded)
+    seeded = get_scenario(scenario_id, user_id)
+    seeded.status = ScenarioStatus.EXPLAINED
+    save_scenario(seeded, user_id)
 
-        response = await client.post(
-            f"/api/v1/scenarios/{scenario_id}/refine",
-            json={"userMessage": "Make it better"},
-        )
+    response = await client.post(
+        f"/api/v1/scenarios/{scenario_id}/refine",
+        json={"userMessage": "Make it better"},
+    )
 
     assert response.status_code == 422
     assert "clarifyingPrompt" in response.json()["detail"]
 
 
-async def test_refine_scenario_returns_409_when_not_explained():
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        scenario = await _create_ranked_scenario(client)
-        scenario_id = scenario["scenarioId"]
-        response = await client.post(
-            f"/api/v1/scenarios/{scenario_id}/refine",
-            json={"userMessage": "I want quieter neighborhoods."},
-        )
+@respx.mock
+async def test_refine_scenario_returns_409_when_not_explained(authenticated_client):
+    client, _user_id = authenticated_client
+    scenario = await _create_ranked_scenario(client)
+    scenario_id = scenario["scenarioId"]
+    response = await client.post(
+        f"/api/v1/scenarios/{scenario_id}/refine",
+        json={"userMessage": "I want quieter neighborhoods."},
+    )
 
     assert response.status_code == 409
 
 
-async def test_refine_scenario_returns_502_on_ai_failure(monkeypatch):
+@respx.mock
+async def test_refine_scenario_returns_502_on_ai_failure(authenticated_client, monkeypatch):
     from app.services.ai_explanation import AIExplanationError
 
     async def _fake_parse_refinement(**kwargs):
@@ -475,24 +486,21 @@ async def test_refine_scenario_returns_502_on_ai_failure(monkeypatch):
         _fake_parse_refinement,
     )
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        scenario = await _create_ranked_scenario(client)
-        scenario_id = scenario["scenarioId"]
+    client, user_id = authenticated_client
+    scenario = await _create_ranked_scenario(client)
+    scenario_id = scenario["scenarioId"]
 
-        from app.repositories.scenario_store import get_scenario, save_scenario
-        from app.schemas.scenario import ScenarioStatus
+    from app.repositories.scenario_store import get_scenario, save_scenario
+    from app.schemas.scenario import ScenarioStatus
 
-        seeded = get_scenario(scenario_id)
-        seeded.status = ScenarioStatus.EXPLAINED
-        save_scenario(seeded)
+    seeded = get_scenario(scenario_id, user_id)
+    seeded.status = ScenarioStatus.EXPLAINED
+    save_scenario(seeded, user_id)
 
-        response = await client.post(
-            f"/api/v1/scenarios/{scenario_id}/refine",
-            json={"userMessage": "Prefer transit and quieter areas."},
-        )
+    response = await client.post(
+        f"/api/v1/scenarios/{scenario_id}/refine",
+        json={"userMessage": "Prefer transit and quieter areas."},
+    )
 
     assert response.status_code == 502
 # [GenAI Use] LLM Response End

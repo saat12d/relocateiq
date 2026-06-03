@@ -33,13 +33,20 @@ from app.services.listings import (
 # --- GET /api/v1/zones/{zoneId}/listings ---
 
 
-async def test_listings_for_known_zone_returns_200_and_results():
-    """A zone with listings returns 200 and a non-empty array."""
+async def test_listings_requires_auth():
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app),
         base_url="http://test",
     ) as client:
         response = await client.get("/api/v1/zones/westwood/listings")
+
+    assert response.status_code in (401, 403)
+
+
+async def test_listings_for_known_zone_returns_200_and_results(authenticated_client):
+    """A zone with listings returns 200 and a non-empty array."""
+    client, _user_id = authenticated_client
+    response = await client.get("/api/v1/zones/westwood/listings")
 
     assert response.status_code == 200
     body = response.json()
@@ -47,16 +54,13 @@ async def test_listings_for_known_zone_returns_200_and_results():
     assert len(body) > 0
 
 
-async def test_listings_response_uses_camel_case_contract():
+async def test_listings_response_uses_camel_case_contract(authenticated_client):
     """
     Each listing exposes the camelCase fields the frontend HousingListing type
     expects, and never the snake_case internal names.
     """
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        response = await client.get("/api/v1/zones/westwood/listings")
+    client, _user_id = authenticated_client
+    response = await client.get("/api/v1/zones/westwood/listings")
 
     assert response.status_code == 200
     listing = response.json()[0]
@@ -71,13 +75,10 @@ async def test_listings_response_uses_camel_case_contract():
     assert "listing_id" not in listing
 
 
-async def test_listings_for_unknown_zone_returns_empty_list():
+async def test_listings_for_unknown_zone_returns_empty_list(authenticated_client):
     """An unknown zone returns 200 with an empty array, not a 404."""
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        response = await client.get("/api/v1/zones/not-a-real-zone/listings")
+    client, _user_id = authenticated_client
+    response = await client.get("/api/v1/zones/not-a-real-zone/listings")
 
     assert response.status_code == 200
     assert response.json() == []
