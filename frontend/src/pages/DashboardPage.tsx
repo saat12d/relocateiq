@@ -1,18 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Topbar from "../components/Dashboard/Topbar";
 import FilterPanel from "../components/Dashboard/FilterPanel";
+import AiRefinementPanel from "../components/Dashboard/AiRefinementPanel";
 import ResultsPanel from "../components/Dashboard/ResultsPanel";
 import DashboardMap from "../components/Dashboard/DashboardMap";
 import DetailPanel from "../components/Dashboard/DetailPanel";
-import { explainScenario } from "../services/scenario";
 import "../components/Dashboard/Dashboard.css";
 
 import { withRequirements, userSignedInRequirement } from "../lib/Requirements";
 
 import {
   createScenario,
+  explainScenario,
   fetchScenario,
   fetchZoneListings,
+  refineScenario,
+  ScenarioClarificationError,
   updateScenarioPreferences,
 } from "../services/scenario";
 import type {
@@ -20,20 +23,29 @@ import type {
   HousingListing,
   PreferenceProfile,
 } from "../models/types";
+import { ScenarioStatus } from "../models/types";
 
 type ListingsStatus = "idle" | "loading" | "error";
 
-// Remember the active scenario so filters (stored on the scenario's
-// PreferenceProfile) survive navigating away and back.
 const ACTIVE_SCENARIO_KEY = "relocateiq.activeScenarioId";
 
+function pickSelectedZoneId(
+  recommendations: CommuteScenario["recommendations"],
+  currentId: string | null,
+): string | null {
+  if (currentId && recommendations.some((rec) => rec.zone.zoneId === currentId)) {
+    return currentId;
+  }
+  const topRanked =
+    recommendations.find((rec) => rec.rank === 1) ?? recommendations[0];
+  return topRanked?.zone.zoneId ?? null;
+}
+
 function DashboardPage() {
-  // Set up state for the API data and loading status
   const [scenario, setScenario] = useState<CommuteScenario | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [radiusMiles, setRadiusMiles] = useState(15);
-  // Departure time of day as minutes since midnight (default 7:30 AM).
   const [departureMinutes, setDepartureMinutes] = useState(450);
 
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
@@ -42,11 +54,36 @@ function DashboardPage() {
   >({});
   const [listingsStatus, setListingsStatus] = useState<ListingsStatus>("idle");
 
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
   const [isApplyingFilters, setIsApplyingFilters] = useState(false);
+  const [refinementSummary, setRefinementSummary] = useState<string | null>(
+    null,
+  );
+  const [clarifyingPrompt, setClarifyingPrompt] = useState<string | null>(
+    null,
+  );
 
-  // Core search call to the backend, shared by the topbar search and the
-  // departure-time slider so both run the exact same scenario request.
+  const runExplain = useCallback(async (scenarioId: string) => {
+    setIsExplaining(true);
+    setError("");
+    try {
+      const explained = await explainScenario(scenarioId);
+      setScenario(explained);
+      setSelectedZoneId((current) =>
+        pickSelectedZoneId(explained.recommendations, current),
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to generate AI explanations.",
+      );
+    } finally {
+      setIsExplaining(false);
+    }
+  }, []);
+
   async function runSearch(
     workAddress: string,
     searchRadius: number,
@@ -54,6 +91,8 @@ function DashboardPage() {
   ) {
     setIsLoading(true);
     setError("");
+    setRefinementSummary(null);
+    setClarifyingPrompt(null);
 
     try {
       const newScenario = await createScenario({
@@ -70,6 +109,10 @@ function DashboardPage() {
       if (newScenario.recommendations.length > 0) {
         setSelectedZoneId(newScenario.recommendations[0].zone.zoneId);
       }
+
+      if (newScenario.status === ScenarioStatus.RANKED) {
+        await runExplain(newScenario.scenarioId);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load scenario.");
     } finally {
@@ -77,8 +120,6 @@ function DashboardPage() {
     }
   }
 
-  // Apply a manual filter change: persist it to the scenario's PreferenceProfile
-  // and re-rank server-side, then swap in the updated scenario.
   async function handleFilterChange(patch: Partial<PreferenceProfile>) {
     if (!scenario) return;
 
@@ -87,6 +128,9 @@ function DashboardPage() {
     try {
       const updated = await updateScenarioPreferences(scenario.scenarioId, patch);
       setScenario(updated);
+      setSelectedZoneId((current) =>
+        pickSelectedZoneId(updated.recommendations, current),
+      );
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to apply filters.",
@@ -96,8 +140,33 @@ function DashboardPage() {
     }
   }
 
-  // On first load, restore the last scenario (and its saved filters) if one
-  // exists, so leaving and returning shows the same filtered map.
+  async function handleRefine(userMessage: string) {
+    if (!scenario) return;
+
+    setIsRefining(true);
+    setError("");
+    setClarifyingPrompt(null);
+
+    try {
+      const result = await refineScenario(scenario.scenarioId, userMessage);
+      setScenario(result.scenario);
+      setRefinementSummary(result.explanationSummary);
+      setSelectedZoneId((current) =>
+        pickSelectedZoneId(result.scenario.recommendations, current),
+      );
+    } catch (err) {
+      if (err instanceof ScenarioClarificationError) {
+        setClarifyingPrompt(err.clarifyingPrompt);
+        return;
+      }
+      setError(
+        err instanceof Error ? err.message : "Failed to refine recommendations.",
+      );
+    } finally {
+      setIsRefining(false);
+    }
+  }
+
   useEffect(() => {
     const savedId = localStorage.getItem(ACTIVE_SCENARIO_KEY);
     if (!savedId) return;
@@ -107,13 +176,17 @@ function DashboardPage() {
       try {
         const restored = await fetchScenario(savedId);
         if (cancelled) return;
+
         setScenario(restored);
         setRadiusMiles(restored.searchRadiusMiles);
         if (restored.recommendations.length > 0) {
           setSelectedZoneId(restored.recommendations[0].zone.zoneId);
         }
+
+        if (restored.status === ScenarioStatus.RANKED) {
+          await runExplain(restored.scenarioId);
+        }
       } catch {
-        // Scenario is gone (e.g. 404); drop the stale pointer.
         localStorage.removeItem(ACTIVE_SCENARIO_KEY);
       }
     })();
@@ -121,15 +194,12 @@ function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [runExplain]);
 
-  // Topbar search: uses the currently selected departure time.
   function handleCreateSearch(workAddress: string, searchRadius: number) {
     return runSearch(workAddress, searchRadius, departureMinutes);
   }
 
-  // Departure slider: re-run the search for the existing workplace/radius so
-  // rankings reflect traffic at the newly chosen time.
   function handleDepartureCommit(nextDeparture: number) {
     setDepartureMinutes(nextDeparture);
     if (scenario) {
@@ -137,30 +207,13 @@ function DashboardPage() {
     }
   }
 
-  async function handleGenerateInsight() {
-    console.log(1);
-    if (!scenario) return;
-
-    console.log(1);
-
-    setIsGeneratingAI(true);
-    try {
-      const updatedScenario = await explainScenario(scenario.scenarioId);
-      console.log(2);
-
-      setScenario(updatedScenario);
-    } catch (err) {
-      console.error("AI Generation failed:", err);
-      console.log(3);
-    } finally {
-      setIsGeneratingAI(false);
-    }
-  }
-
-  // Find the currently selected recommendation based on the ID
   const selectedRecommendation = scenario?.recommendations.find(
     (rec) => rec.zone.zoneId === selectedZoneId,
   );
+
+  const canRefine =
+    scenario?.status === ScenarioStatus.EXPLAINED ||
+    scenario?.status === ScenarioStatus.SAVED;
 
   useEffect(() => {
     if (!selectedZoneId || listingsByZone[selectedZoneId]) {
@@ -180,7 +233,7 @@ function DashboardPage() {
           [selectedZoneId]: listings,
         }));
         setListingsStatus("idle");
-      } catch (err) {
+      } catch {
         if (!cancelled) setListingsStatus("error");
       }
     }
@@ -193,7 +246,6 @@ function DashboardPage() {
 
   return (
     <main className="dashboard-page">
-      {/* Pass the search function down to the Topbar */}
       <Topbar
         onSearch={handleCreateSearch}
         isLoading={isLoading}
@@ -204,7 +256,6 @@ function DashboardPage() {
       {error && <div className="dashboard-error">{error}</div>}
 
       <div className="dashboard-workspace">
-        {/* Only render the panels if we have data back from the API */}
         {scenario && selectedRecommendation ? (
           <>
             <div className="dashboard-left-rail">
@@ -219,6 +270,14 @@ function DashboardPage() {
                 totalCount={scenario.recommendations.length}
                 isApplying={isApplyingFilters}
                 onChange={handleFilterChange}
+              />
+              <AiRefinementPanel
+                disabled={!canRefine}
+                isExplaining={isExplaining}
+                isRefining={isRefining}
+                lastSummary={refinementSummary}
+                clarifyingPrompt={clarifyingPrompt}
+                onRefine={handleRefine}
               />
               <ResultsPanel
                 recommendations={scenario.recommendations}
@@ -237,8 +296,7 @@ function DashboardPage() {
             />
             <DetailPanel
               selected={selectedRecommendation}
-              isGenerating={isGeneratingAI}
-              onGenerateInsight={handleGenerateInsight}
+              isExplaining={isExplaining}
               listings={
                 selectedZoneId ? (listingsByZone[selectedZoneId] ?? []) : []
               }
@@ -256,6 +314,5 @@ function DashboardPage() {
     </main>
   );
 }
-// export default DashboardPage;
 
 export default withRequirements(DashboardPage, [userSignedInRequirement]);

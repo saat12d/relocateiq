@@ -19,19 +19,16 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
 
 type Recommendation = CommuteScenario["recommendations"][0];
 
-// Update the props interface to include the new functions
 type DetailPanelProps = {
   selected: Recommendation;
-  isGenerating: boolean;
-  onGenerateInsight: () => void;
+  isExplaining: boolean;
   listings: HousingListing[];
   listingsStatus: "idle" | "loading" | "error";
 };
 
 export default function DetailPanel({
   selected,
-  isGenerating,
-  onGenerateInsight,
+  isExplaining,
   listings,
   listingsStatus,
 }: DetailPanelProps) {
@@ -42,7 +39,7 @@ export default function DetailPanel({
     <aside className="zone-panel" aria-label={`${selected.zone.name} details`}>
       <div className={`zone-panel__header zone-panel__header--${tone}`}>
         <span className={`dashboard-rank dashboard-rank--${tone}`}>
-          {selected.rank}
+          {selected.rank || "—"}
         </span>
         <div>
           <h2>{selected.zone.name}</h2>
@@ -104,15 +101,14 @@ export default function DetailPanel({
 
         {selected.explanationSummary ? (
           <p>{selected.explanationSummary}</p>
+        ) : isExplaining ? (
+          <p className="ai-panel__loading" role="status">
+            Analyzing this neighborhood…
+          </p>
         ) : (
-          <button
-            className="generate-ai-button"
-            type="button"
-            onClick={onGenerateInsight}
-            disabled={isGenerating}
-          >
-            {isGenerating ? "Analyzing neighborhood..." : "Generate Insights"}
-          </button>
+          <p className="ai-panel__empty">
+            Insights will appear here once analysis completes.
+          </p>
         )}
       </section>
 
