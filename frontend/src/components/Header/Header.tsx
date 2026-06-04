@@ -35,6 +35,9 @@ export default function Header() {
             <span className="site-user-label" title={user.email}>
               {user.name}
             </span>
+            <Link className="button button--ghost" to="/scenarios">
+              Saved
+            </Link>
             <Link className="button button--ghost" to="/dashboard">
               Dashboard
             </Link>

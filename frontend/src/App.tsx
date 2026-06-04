@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from "react-route
 import HomePage from "./pages/HomePage.tsx";
 import { LoginPage, SignupPage } from "./pages/AuthPages.tsx";
 import DashboardPage from "./pages/DashboardPage.tsx";
+import SavedScenariosPage from "./pages/SavedScenariosPage.tsx";
 
 import Header from "./components/Header/Header.tsx";
 
@@ -18,6 +19,7 @@ function AppShell() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/scenarios" element={<SavedScenariosPage />} />
       </Routes>
     </>
   );
