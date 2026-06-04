@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Topbar from "../components/Dashboard/Topbar";
+import FilterPanel from "../components/Dashboard/FilterPanel";
 import ResultsPanel from "../components/Dashboard/ResultsPanel";
 import DashboardMap from "../components/Dashboard/DashboardMap";
 import DetailPanel from "../components/Dashboard/DetailPanel";
@@ -8,10 +9,23 @@ import "../components/Dashboard/Dashboard.css";
 
 import { withRequirements, userSignedInRequirement } from "../lib/Requirements";
 
-import { createScenario, fetchZoneListings } from "../services/scenario";
-import type { CommuteScenario, HousingListing } from "../models/types";
+import {
+  createScenario,
+  fetchScenario,
+  fetchZoneListings,
+  updateScenarioPreferences,
+} from "../services/scenario";
+import type {
+  CommuteScenario,
+  HousingListing,
+  PreferenceProfile,
+} from "../models/types";
 
 type ListingsStatus = "idle" | "loading" | "error";
+
+// Remember the active scenario so filters (stored on the scenario's
+// PreferenceProfile) survive navigating away and back.
+const ACTIVE_SCENARIO_KEY = "relocateiq.activeScenarioId";
 
 function DashboardPage() {
   // Set up state for the API data and loading status
@@ -29,6 +43,7 @@ function DashboardPage() {
   const [listingsStatus, setListingsStatus] = useState<ListingsStatus>("idle");
 
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isApplyingFilters, setIsApplyingFilters] = useState(false);
 
   // Core search call to the backend, shared by the topbar search and the
   // departure-time slider so both run the exact same scenario request.
@@ -50,6 +65,7 @@ function DashboardPage() {
 
       setScenario(newScenario);
       setListingsByZone({});
+      localStorage.setItem(ACTIVE_SCENARIO_KEY, newScenario.scenarioId);
 
       if (newScenario.recommendations.length > 0) {
         setSelectedZoneId(newScenario.recommendations[0].zone.zoneId);
@@ -60,6 +76,52 @@ function DashboardPage() {
       setIsLoading(false);
     }
   }
+
+  // Apply a manual filter change: persist it to the scenario's PreferenceProfile
+  // and re-rank server-side, then swap in the updated scenario.
+  async function handleFilterChange(patch: Partial<PreferenceProfile>) {
+    if (!scenario) return;
+
+    setIsApplyingFilters(true);
+    setError("");
+    try {
+      const updated = await updateScenarioPreferences(scenario.scenarioId, patch);
+      setScenario(updated);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to apply filters.",
+      );
+    } finally {
+      setIsApplyingFilters(false);
+    }
+  }
+
+  // On first load, restore the last scenario (and its saved filters) if one
+  // exists, so leaving and returning shows the same filtered map.
+  useEffect(() => {
+    const savedId = localStorage.getItem(ACTIVE_SCENARIO_KEY);
+    if (!savedId) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const restored = await fetchScenario(savedId);
+        if (cancelled) return;
+        setScenario(restored);
+        setRadiusMiles(restored.searchRadiusMiles);
+        if (restored.recommendations.length > 0) {
+          setSelectedZoneId(restored.recommendations[0].zone.zoneId);
+        }
+      } catch {
+        // Scenario is gone (e.g. 404); drop the stale pointer.
+        localStorage.removeItem(ACTIVE_SCENARIO_KEY);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Topbar search: uses the currently selected departure time.
   function handleCreateSearch(workAddress: string, searchRadius: number) {
@@ -145,11 +207,25 @@ function DashboardPage() {
         {/* Only render the panels if we have data back from the API */}
         {scenario && selectedRecommendation ? (
           <>
-            <ResultsPanel
-              recommendations={scenario.recommendations}
-              selectedId={selectedZoneId}
-              onSelect={setSelectedZoneId}
-            />
+            <div className="dashboard-left-rail">
+              <FilterPanel
+                prefersTransit={scenario.preferenceProfile.prefersTransit}
+                avoidHighways={scenario.preferenceProfile.avoidHighways}
+                maxCommuteMinutes={scenario.preferenceProfile.maxCommuteMinutes}
+                matchingCount={
+                  scenario.recommendations.filter((rec) => rec.meetsFilters)
+                    .length
+                }
+                totalCount={scenario.recommendations.length}
+                isApplying={isApplyingFilters}
+                onChange={handleFilterChange}
+              />
+              <ResultsPanel
+                recommendations={scenario.recommendations}
+                selectedId={selectedZoneId}
+                onSelect={setSelectedZoneId}
+              />
+            </div>
             <DashboardMap
               recommendations={scenario.recommendations}
               selectedId={selectedZoneId}

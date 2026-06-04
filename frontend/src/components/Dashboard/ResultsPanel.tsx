@@ -1,5 +1,5 @@
 import React from "react";
-import type { CommuteScenario } from "../models/types";
+import type { CommuteScenario } from "../../models/types";
 
 type ResultsPanelProps = {
   recommendations: CommuteScenario["recommendations"];
@@ -18,6 +18,10 @@ export default function ResultsPanel({
     return "red";
   };
 
+  const matchingCount = recommendations.filter(
+    (item) => item.meetsFilters,
+  ).length;
+
   return (
     <aside className="results-panel" aria-label="Top neighborhoods">
       <div className="panel-title-row">
@@ -25,22 +29,23 @@ export default function ResultsPanel({
           <h1>Top neighborhoods</h1>
           <p>Ranked by total commute time</p>
         </div>
-        <span>{recommendations.length} areas</span>
+        <span>{matchingCount} areas</span>
       </div>
       <div className="results-list">
         {recommendations.map((item) => {
-          const tone = getTone(item.rank);
+          const dimmed = !item.meetsFilters;
+          const tone = dimmed ? "muted" : getTone(item.rank);
           const isSelected = item.zone.zoneId === selectedId;
 
           return (
             <button
-              className={`result-card result-card--${tone} ${isSelected ? "is-selected" : ""}`}
+              className={`result-card result-card--${tone} ${isSelected ? "is-selected" : ""} ${dimmed ? "is-dimmed" : ""}`}
               type="button"
               key={item.zone.zoneId}
               onClick={() => onSelect(item.zone.zoneId)}
             >
               <span className={`dashboard-rank dashboard-rank--${tone}`}>
-                {item.rank}
+                {dimmed ? "—" : item.rank}
               </span>
               <div className="result-card__body">
                 <div className="result-card__headline">
