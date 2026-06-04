@@ -31,7 +31,7 @@ class UpdatePreferencesRequest(BaseModel):
 
     prefers_transit: bool | None = Field(None, alias="prefersTransit")
     avoid_highways: bool | None = Field(None, alias="avoidHighways")
-    max_commute_minutes: int | None = Field(None, ge=5, le=60, alias="maxCommuteMinutes")
+    max_commute_minutes: int | None = Field(None, ge=5, le=120, alias="maxCommuteMinutes")
 
 
 class RefineScenarioRequest(BaseModel):
@@ -63,6 +63,10 @@ class CommuteAnalysis(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     drive_time_peak_minutes: int = Field(alias="driveTimePeakMinutes")
+    # Drive time with highways excluded, for the "avoid highways" filter.
+    drive_time_no_highways_peak_minutes: int = Field(
+        0, alias="driveTimeNoHighwaysPeakMinutes"
+    )
     transit_time_peak_minutes: int = Field(alias="transitTimePeakMinutes")
     walking_minutes_to_stop: int = Field(alias="walkingMinutesToStop")
     transfer_count: int = Field(alias="transferCount")
@@ -95,6 +99,9 @@ class Recommendation(BaseModel):
     rank: int
     total_score: float = Field(alias="totalScore")
     explanation_summary: str = Field("", alias="explanationSummary")
+    # False when the zone fails the active filters (over max commute, etc.).
+    # The frontend dims these instead of dropping them, so filters stay reversible.
+    meets_filters: bool = Field(True, alias="meetsFilters")
     zone: Zone
     commute_analysis: CommuteAnalysis = Field(alias="commuteAnalysis")
     lifestyle_analysis: LifestyleAnalysis = Field(alias="lifestyleAnalysis")

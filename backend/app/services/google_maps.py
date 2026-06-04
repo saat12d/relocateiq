@@ -15,11 +15,13 @@ async def get_travel_time(
     destination: str,
     mode: str = "driving",
     departure_time: Optional[int] = None,
+    avoid: Optional[str] = None,
 ) -> dict:
     """Call Google Distance Matrix for a single origin/destination pair.
 
     Returns a dict with duration_seconds, duration_in_traffic_seconds (if available),
-    distance_meters, and the resolved address strings.
+    distance_meters, and the resolved address strings. Pass avoid="highways" to
+    route around freeways.
     """
     key = os.getenv("GOOGLE_MAPS_API_KEY", "")
     if not key or key.startswith("your_"):
@@ -32,6 +34,8 @@ async def get_travel_time(
         "mode": mode,
         "units": "imperial",
     }
+    if avoid is not None:
+        params["avoid"] = avoid
     if departure_time is not None:
         params["departure_time"] = str(departure_time)
         if mode == "driving":
@@ -67,8 +71,11 @@ async def get_drive_time(
     origin: str,
     destination: str,
     departure_time: Optional[int] = None,
+    avoid: Optional[str] = None,
 ) -> dict:
-    return await get_travel_time(origin, destination, mode="driving", departure_time=departure_time)
+    return await get_travel_time(
+        origin, destination, mode="driving", departure_time=departure_time, avoid=avoid
+    )
 
 
 async def get_transit_time(

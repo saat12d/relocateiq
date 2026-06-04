@@ -3,7 +3,8 @@
  * - DRAFT: Initial state. The scenario has been created but may lack valid input (e.g., missing address).
  * - SUBMITTED: Valid input has been provided and the scenario is queued for processing.
  * - ANALYZING: The backend is currently identifying candidate zones and fetching external routing/transit data.
- * - READY: Analysis is complete. The scenario has successfully ranked zones and is ready to display.
+ * - RANKED: Analysis is complete. The scenario has successfully ranked zones and is ready to display.
+ * - EXPLAINED: AI explanations have been generated for the ranked zones.
  * - FAILED: Processing was interrupted, typically due to an invalid address or third-party API failure.
  * - SAVED: The completed scenario has been explicitly preserved by the user for future retrieval.
  */
@@ -11,7 +12,8 @@ export enum ScenarioStatus {
   DRAFT = "DRAFT",
   SUBMITTED = "SUBMITTED",
   ANALYZING = "ANALYZING",
-  READY = "READY",
+  RANKED = "RANKED",
+  EXPLAINED = "EXPLAINED",
   FAILED = "FAILED",
   SAVED = "SAVED",
 }
@@ -68,6 +70,8 @@ export interface PreferenceProfile {
  */
 export interface CommuteAnalysis {
   driveTimePeakMinutes: number;
+  /** Drive time with highways excluded, used by the "avoid highways" filter. */
+  driveTimeNoHighwaysPeakMinutes: number;
   transitTimePeakMinutes: number;
   walkingMinutesToStop: number;
   transferCount: number;
@@ -102,6 +106,8 @@ export interface Recommendation {
   rank: number;
   totalScore: number;
   explanationSummary: string;
+  /** False when the zone fails the active filters; dimmed instead of removed. */
+  meetsFilters: boolean;
   commuteAnalysis: CommuteAnalysis;
   lifestyleAnalysis: LifestyleAnalysis;
   zone: Zone;

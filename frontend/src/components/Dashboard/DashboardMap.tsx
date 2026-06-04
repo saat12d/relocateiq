@@ -31,11 +31,16 @@ function buildMapData(
     workplace.latitude,
   ];
 
+  const DIMMED_COLOR = "#b9b1a6"; // grey for zones that fail the active filters
+
   const getColor = (rank: number) => {
     if (rank === 1) return "#4f9d52"; // Green
     if (rank <= 3) return "#f3a428"; // Amber
     return "#d84f3f"; // Red
   };
+
+  const colorFor = (item: CommuteScenario["recommendations"][number]) =>
+    item.meetsFilters ? getColor(item.rank) : DIMMED_COLOR;
 
   return {
     routes: {
@@ -51,7 +56,8 @@ function buildMapData(
           type: "Feature" as const,
           properties: {
             id: item.zone.zoneId,
-            color: getColor(rank),
+            color: colorFor(item),
+            dimmed: !item.meetsFilters,
             selected: item.zone.zoneId === selectedId,
           },
           geometry: {
@@ -72,7 +78,7 @@ function buildMapData(
     },
     zones: {
       type: "FeatureCollection" as const,
-      features: recommendations.map((item, index) => {
+      features: recommendations.map((item) => {
         const itemCoords: [number, number] = [
           item.zone.centerLng,
           item.zone.centerLat,
@@ -82,7 +88,8 @@ function buildMapData(
           type: "Feature" as const,
           properties: {
             id: item.zone.zoneId,
-            color: getColor(index + 1),
+            color: colorFor(item),
+            dimmed: !item.meetsFilters,
             selected: item.zone.zoneId === selectedId,
           },
           geometry: {
@@ -99,7 +106,7 @@ function buildMapData(
     },
     labels: {
       type: "FeatureCollection" as const,
-      features: recommendations.map((item, index) => {
+      features: recommendations.map((item) => {
         const itemCoords: [number, number] = [
           item.zone.centerLng,
           item.zone.centerLat,
@@ -109,8 +116,9 @@ function buildMapData(
           type: "Feature" as const,
           properties: {
             id: item.zone.zoneId,
-            rank: String(item.rank),
-            color: getColor(index + 1),
+            rank: item.meetsFilters ? String(item.rank) : "—",
+            color: colorFor(item),
+            dimmed: !item.meetsFilters,
             selected: item.zone.zoneId === selectedId,
           },
           geometry: { type: "Point" as const, coordinates: itemCoords },
@@ -291,7 +299,12 @@ export default function DashboardMap({
           source: "dashboard-zones",
           paint: {
             "fill-color": ["get", "color"],
-            "fill-opacity": ["case", ["get", "selected"], 0.24, 0.14],
+            "fill-opacity": [
+              "case",
+              ["get", "dimmed"],
+              0.06,
+              ["case", ["get", "selected"], 0.24, 0.14],
+            ],
           },
         });
         map.addLayer({
@@ -312,7 +325,12 @@ export default function DashboardMap({
           paint: {
             "line-color": ["get", "color"],
             "line-width": ["case", ["get", "selected"], 6, 4],
-            "line-opacity": ["case", ["get", "selected"], 0.9, 0.44],
+            "line-opacity": [
+              "case",
+              ["get", "dimmed"],
+              0.12,
+              ["case", ["get", "selected"], 0.9, 0.44],
+            ],
           },
         });
         map.addLayer({
@@ -322,7 +340,12 @@ export default function DashboardMap({
           paint: {
             "circle-radius": ["case", ["get", "selected"], 24, 21],
             "circle-color": ["get", "color"],
-            "circle-opacity": ["case", ["get", "selected"], 0.96, 0.82],
+            "circle-opacity": [
+              "case",
+              ["get", "dimmed"],
+              0.45,
+              ["case", ["get", "selected"], 0.96, 0.82],
+            ],
             "circle-stroke-color": "#fffdf8",
             "circle-stroke-width": 3,
           },

@@ -104,6 +104,7 @@ def _to_schema_response(db_scenario) -> ScenarioResponse:
                 rank=rec.rank,
                 total_score=rec.total_score,
                 explanation_summary=rec.explanation_summary or "",
+                meets_filters=rec.meets_filters,
                 zone=Zone(
                     zone_id=zone.zone_id,
                     name=zone.name,
@@ -113,6 +114,10 @@ def _to_schema_response(db_scenario) -> ScenarioResponse:
                 ),
                 commute_analysis=CommuteAnalysis(
                     drive_time_peak_minutes=int(round(commute.drive_time_peak_minutes)),
+                    drive_time_no_highways_peak_minutes=int(
+                        round(commute.drive_time_no_highways_peak_minutes
+                              or commute.drive_time_peak_minutes)
+                    ),
                     transit_time_peak_minutes=int(round(commute.transit_time_peak_minutes)),
                     walking_minutes_to_stop=int(round(commute.walking_minutes_to_stop)),
                     transfer_count=commute.transfer_count,
@@ -250,6 +255,7 @@ def save_scenario(scenario: ScenarioResponse, user_id: str) -> None:
                 rank=rec.rank,
                 total_score=rec.total_score,
                 explanation_summary=rec.explanation_summary or None,
+                meets_filters=rec.meets_filters,
             )
             db.add(rec_row)
             db.flush()
@@ -261,6 +267,7 @@ def save_scenario(scenario: ScenarioResponse, user_id: str) -> None:
                     analysis_id=str(uuid4()),
                     recommendation_id=rec_row.recommendation_id,
                     drive_time_peak_minutes=commute.drive_time_peak_minutes,
+                    drive_time_no_highways_peak_minutes=commute.drive_time_no_highways_peak_minutes,
                     transit_time_peak_minutes=commute.transit_time_peak_minutes,
                     walking_minutes_to_stop=commute.walking_minutes_to_stop,
                     transfer_count=commute.transfer_count,

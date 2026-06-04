@@ -235,16 +235,20 @@ async def test_update_preferences_reranks_and_filters_zones(authenticated_client
     assert len(payload["recommendations"]) == original_count
     for idx, rec in enumerate(payload["recommendations"], start=1):
         assert rec["rank"] == idx
+        assert rec["meetsFilters"] is True
         assert rec["commuteAnalysis"]["transitTimePeakMinutes"] <= 30
 
 
 @respx.mock
-async def test_update_preferences_removes_zones_exceeding_max_commute(authenticated_client):
+async def test_update_preferences_dims_zones_exceeding_max_commute(authenticated_client):
     client, _user_id = authenticated_client
     scenario = await _create_ranked_scenario(client)
     scenario_id = scenario["scenarioId"]
+    original_count = len(scenario["recommendations"])
 
-    # Drive time from mock is 18 mins with traffic; cap at 5 should remove everything.
+    # Drive time from mock is 18 mins with traffic; cap at 5 fails every zone.
+    # Zones are kept but flagged (dimmed) rather than dropped, so the filter is
+    # reversible.
     response = await client.patch(
         f"/api/v1/scenarios/{scenario_id}/preferences",
         json={"maxCommuteMinutes": 5},
@@ -253,7 +257,9 @@ async def test_update_preferences_removes_zones_exceeding_max_commute(authentica
     assert response.status_code == 200
     payload = response.json()
     assert payload["preferenceProfile"]["maxCommuteMinutes"] == 5
-    assert payload["recommendations"] == []
+    assert len(payload["recommendations"]) == original_count
+    assert all(rec["meetsFilters"] is False for rec in payload["recommendations"])
+    assert all(rec["rank"] == 0 for rec in payload["recommendations"])
 
 
 async def test_update_preferences_returns_404_for_unknown_scenario(authenticated_client):
@@ -274,7 +280,7 @@ async def test_update_preferences_rejects_out_of_range_max_commute(authenticated
 
     response = await client.patch(
         f"/api/v1/scenarios/{scenario_id}/preferences",
-        json={"maxCommuteMinutes": 120},
+        json={"maxCommuteMinutes": 200},
     )
 
     assert response.status_code == 422
@@ -538,27 +544,24 @@ def test_next_weekday_epoch_uses_requested_time_of_day():
 
 
 @respx.mock
-async def test_create_scenario_forwards_departure_time_to_distance_matrix():
+async def test_create_scenario_forwards_departure_time_to_distance_matrix(authenticated_client):
     import datetime as dt
 
+    client, _user_id = authenticated_client
     respx.get(GEOCODING_URL).mock(
         return_value=httpx.Response(200, json=_geocode_ok_payload())
     )
     captured: dict = {}
     respx.get(DISTANCE_MATRIX_URL).mock(side_effect=_captured_departure_matrix(captured))
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        response = await client.post(
-            "/api/v1/scenarios",
-            json={
-                "workplaceAddress": "UCLA, Los Angeles, CA",
-                "maxRadiusMiles": 15,
-                "departureTimeMinutes": 450,  # 7:30 AM
-            },
-        )
+    response = await client.post(
+        "/api/v1/scenarios",
+        json={
+            "workplaceAddress": "UCLA, Los Angeles, CA",
+            "maxRadiusMiles": 15,
+            "departureTimeMinutes": 450,  # 7:30 AM
+        },
+    )
 
     assert response.status_code == 201
     assert captured["departure_time"] is not None
@@ -568,23 +571,20 @@ async def test_create_scenario_forwards_departure_time_to_distance_matrix():
 
 
 @respx.mock
-async def test_create_scenario_defaults_departure_time_when_omitted():
+async def test_create_scenario_defaults_departure_time_when_omitted(authenticated_client):
     import datetime as dt
 
+    client, _user_id = authenticated_client
     respx.get(GEOCODING_URL).mock(
         return_value=httpx.Response(200, json=_geocode_ok_payload())
     )
     captured: dict = {}
     respx.get(DISTANCE_MATRIX_URL).mock(side_effect=_captured_departure_matrix(captured))
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        response = await client.post(
-            "/api/v1/scenarios",
-            json={"workplaceAddress": "UCLA, Los Angeles, CA", "maxRadiusMiles": 15},
-        )
+    response = await client.post(
+        "/api/v1/scenarios",
+        json={"workplaceAddress": "UCLA, Los Angeles, CA", "maxRadiusMiles": 15},
+    )
 
     assert response.status_code == 201
     assert captured["departure_time"] is not None
@@ -592,27 +592,24 @@ async def test_create_scenario_defaults_departure_time_when_omitted():
     assert forwarded.hour == 8 and forwarded.minute == 0  # default rush hour
 
 
-async def test_create_scenario_rejects_out_of_range_departure_time():
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        too_late = await client.post(
-            "/api/v1/scenarios",
-            json={
-                "workplaceAddress": "UCLA, Los Angeles, CA",
-                "maxRadiusMiles": 15,
-                "departureTimeMinutes": 1500,  # > 1439
-            },
-        )
-        negative = await client.post(
-            "/api/v1/scenarios",
-            json={
-                "workplaceAddress": "UCLA, Los Angeles, CA",
-                "maxRadiusMiles": 15,
-                "departureTimeMinutes": -10,
-            },
-        )
+async def test_create_scenario_rejects_out_of_range_departure_time(authenticated_client):
+    client, _user_id = authenticated_client
+    too_late = await client.post(
+        "/api/v1/scenarios",
+        json={
+            "workplaceAddress": "UCLA, Los Angeles, CA",
+            "maxRadiusMiles": 15,
+            "departureTimeMinutes": 1500,  # > 1439
+        },
+    )
+    negative = await client.post(
+        "/api/v1/scenarios",
+        json={
+            "workplaceAddress": "UCLA, Los Angeles, CA",
+            "maxRadiusMiles": 15,
+            "departureTimeMinutes": -10,
+        },
+    )
 
     assert too_late.status_code == 422
     assert negative.status_code == 422
