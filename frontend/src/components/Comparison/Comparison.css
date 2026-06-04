@@ -1,0 +1,210 @@
+/* ==========================================================================
+   Comparison Page Styles
+   ========================================================================== */
+
+.comparison-page {
+  min-height: 100vh;
+  background: #f7f3eb;
+  color: var(--ink);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* --- Header Section --- */
+.comparison-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 252, 246, 0.94);
+  backdrop-filter: blur(18px);
+}
+
+.comparison-header h1 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.back-link {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 8px 0;
+  transition: color 160ms ease;
+}
+
+.back-link:hover {
+  color: var(--ink);
+}
+
+/* --- Table Container --- */
+.comparison-table-container {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 253, 248, 0.86);
+  box-shadow: 0 14px 30px rgba(55, 39, 20, 0.05);
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+
+.comparison-table th:last-child,
+.comparison-table td:last-child {
+  border-right: none;
+}
+
+.comparison-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* --- Table Headers --- */
+.comparison-table th {
+  background: rgba(255, 252, 246, 0.94);
+  vertical-align: middle;
+}
+
+.comparison-table th.metric-col {
+  text-align: left;
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--ink);
+  width: 25%;
+}
+
+.comparison-selector {
+  width: 100%;
+  max-width: 240px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 253, 248, 0.9);
+  color: var(--ink);
+  font-family: inherit;
+  font-weight: 900;
+  font-size: 15px;
+  cursor: pointer;
+  appearance: auto;
+}
+
+.score-badge {
+  display: block;
+  margin: 10px auto 0;
+  width: max-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(79, 157, 82, 0.1);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+/* --- Table Body & Cells --- */
+.comparison-table td {
+  font-size: 14px;
+  font-weight: 750;
+  color: var(--ink);
+}
+
+.comparison-table td:first-child {
+  text-align: left;
+  font-weight: 800;
+  color: #51483f;
+}
+
+.comparison-table tbody tr:nth-child(even) {
+  background: rgba(33, 28, 24, 0.02);
+}
+
+.ai-note {
+  font-style: italic;
+  color: #51483f !important;
+  font-size: 13px !important;
+  font-weight: 650 !important;
+  line-height: 1.45;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+/* --- Table Footer & Buttons --- */
+.comparison-table tfoot td {
+  padding: 24px;
+  background: rgba(255, 252, 246, 0.94);
+}
+
+.explore-listings-btn {
+  width: 100%;
+  max-width: 200px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--green);
+  color: #fffdf8;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.explore-listings-btn:hover:not(:disabled) {
+  background: #3e8a42;
+  transform: translateY(-1px);
+}
+
+.explore-listings-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* --- States --- */
+.comparison-loading,
+.comparison-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: #f7f3eb;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.comparison-error {
+  color: var(--red);
+}
+
+/* Responsive adjustments */
+@media (max-width: 760px) {
+  .comparison-page {
+    padding: 12px;
+  }
+
+  .comparison-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+}

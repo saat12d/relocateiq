@@ -43,7 +43,8 @@ async function throwScenarioError(
     detail &&
     typeof detail === "object" &&
     "clarifyingPrompt" in detail &&
-    typeof (detail as { clarifyingPrompt: unknown }).clarifyingPrompt === "string"
+    typeof (detail as { clarifyingPrompt: unknown }).clarifyingPrompt ===
+      "string"
   ) {
     throw new ScenarioClarificationError(
       (detail as { clarifyingPrompt: string }).clarifyingPrompt,
@@ -137,7 +138,10 @@ export async function updateScenarioPreferences(
 export async function saveScenario(
   scenarioId: string,
 ): Promise<CommuteScenario> {
-  const response = await postWithAuth(`/api/v1/scenarios/${scenarioId}/save`, {});
+  const response = await postWithAuth(
+    `/api/v1/scenarios/${scenarioId}/save`,
+    {},
+  );
 
   if (!response.ok) {
     throw new Error("Unable to save this scenario.");
@@ -186,17 +190,25 @@ export async function refineScenario(
 }
 
 /**
- * Fetches housing listings for a ranked zone.
- * Maps to: GET /api/v1/zones/{zone_id}/listings
+ * Fetches real estate listings for a specific commute zone.
+ * Uses getWithAuth to automatically inject the JWT token.
+ * * @param zoneId - The ID of the neighborhood/zone to fetch listings for.
+ * @returns A promise resolving to an array of HousingListing objects.
  */
 export async function fetchZoneListings(
   zoneId: string,
 ): Promise<HousingListing[]> {
-  const response = await getWithAuth(`/api/v1/zones/${zoneId}/listings`);
+  try {
+    const response = await getWithAuth(`/api/v1/zones/${zoneId}/listings`);
 
-  if (!response.ok) {
-    throw new Error("Failed to load listings for this neighborhood.");
+    if (!response.ok) {
+      throw new Error(`Failed to fetch listings for zone ${zoneId}`);
+    }
+
+    const listings: HousingListing[] = await response.json();
+    return listings;
+  } catch (error) {
+    console.error("Error fetching zone listings:", error);
+    throw error;
   }
-
-  return response.json();
 }
