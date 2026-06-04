@@ -7,6 +7,7 @@ scenario_store's in-memory fallback so tests never touch the dev Postgres.
 """
 
 import os
+from uuid import uuid4
 
 # security.py reads JWT_SECRET at import time, so set it before importing the app.
 os.environ.setdefault("JWT_SECRET", "test-secret-not-for-production")
@@ -19,8 +20,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.auth.security import decode_access_token
-from app.db.database import Base, get_db
 from app.db import models  # noqa: F401  (registers all models on Base)
+from app.db.database import Base, get_db
 from app.main import app
 from app.repositories import scenario_store
 
@@ -57,7 +58,6 @@ async def authenticated_client(_sqlite_session):
 
     app.dependency_overrides[get_db] = _override_get_db
 
-    # Pin scenario persistence to the in-memory fallback so it never reaches Postgres.
     original_db_ready = scenario_store._DB_READY
     scenario_store._DB_READY = False
     scenario_store.reset_memory_store()
@@ -67,8 +67,8 @@ async def authenticated_client(_sqlite_session):
         signup = await client.post(
             "/api/v1/auth/signup",
             json={
-                "email": "filter-tester@example.com",
-                "name": "Filter Tester",
+                "email": f"scenario-tester-{uuid4()}@example.com",
+                "name": "Scenario Tester",
                 "password": "password123",
             },
         )

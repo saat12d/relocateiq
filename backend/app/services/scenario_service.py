@@ -3,7 +3,12 @@ from uuid import uuid4
 
 from fastapi import HTTPException
 
-from app.repositories.scenario_store import get_scenario, save_scenario, update_status
+from app.repositories.scenario_store import (
+    get_scenario,
+    list_scenarios,
+    save_scenario,
+    update_status,
+)
 from app.schemas.scenario import (
     CreateScenarioRequest,
     PreferenceProfile,
@@ -96,6 +101,19 @@ async def create_scenario(req: CreateScenarioRequest, user_id: str) -> ScenarioR
     )
     save_scenario(ranked, user_id)
     return ranked
+
+
+def list_user_scenarios(user_id: str, saved_only: bool = False) -> list[ScenarioResponse]:
+    return list_scenarios(user_id, saved_only=saved_only)
+
+
+def save_user_scenario(scenario_id: str, user_id: str) -> ScenarioResponse:
+    scenario = get_scenario(scenario_id, user_id)
+    if scenario is None:
+        raise HTTPException(status_code=404, detail="Scenario not found")
+    scenario.status = ScenarioStatus.SAVED
+    save_scenario(scenario, user_id)
+    return scenario
 
 
 # [GenAI Use] Prompt: "Role: backend engineer fluent in Python, FastAPI, and Pydantic

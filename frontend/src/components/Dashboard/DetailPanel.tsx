@@ -22,7 +22,10 @@ type Recommendation = CommuteScenario["recommendations"][0];
 // Update the props interface to include the new functions
 type DetailPanelProps = {
   selected: Recommendation;
+  isSaved: boolean;
+  isSaving: boolean;
   isGenerating: boolean;
+  onSaveScenario: () => void;
   onGenerateInsight: () => void;
   listings: HousingListing[];
   listingsStatus: "idle" | "loading" | "error";
@@ -30,7 +33,10 @@ type DetailPanelProps = {
 
 export default function DetailPanel({
   selected,
+  isSaved,
+  isSaving,
   isGenerating,
+  onSaveScenario,
   onGenerateInsight,
   listings,
   listingsStatus,
@@ -51,8 +57,14 @@ export default function DetailPanel({
             total commute
           </p>
         </div>
-        <button type="button" aria-label="Save neighborhood">
-          ♡
+        <button
+          className="save-scenario-button"
+          type="button"
+          onClick={onSaveScenario}
+          disabled={isSaved || isSaving}
+          aria-label={isSaved ? "Scenario saved" : "Save scenario"}
+        >
+          {isSaving ? "Saving" : isSaved ? "Saved" : "Save"}
         </button>
       </div>
       <section className="commute-summary" aria-label="Commute breakdown">

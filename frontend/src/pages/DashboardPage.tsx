@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Topbar from "../components/Dashboard/Topbar";
 import FilterPanel from "../components/Dashboard/FilterPanel";
 import ResultsPanel from "../components/Dashboard/ResultsPanel";
@@ -13,6 +14,7 @@ import {
   createScenario,
   fetchScenario,
   fetchZoneListings,
+  saveScenario,
   updateScenarioPreferences,
 } from "../services/scenario";
 import type {
@@ -20,6 +22,7 @@ import type {
   HousingListing,
   PreferenceProfile,
 } from "../models/types";
+import { ScenarioStatus } from "../models/types";
 
 type ListingsStatus = "idle" | "loading" | "error";
 
@@ -28,10 +31,12 @@ type ListingsStatus = "idle" | "loading" | "error";
 const ACTIVE_SCENARIO_KEY = "relocateiq.activeScenarioId";
 
 function DashboardPage() {
+  const [searchParams] = useSearchParams();
   // Set up state for the API data and loading status
   const [scenario, setScenario] = useState<CommuteScenario | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isSavingScenario, setIsSavingScenario] = useState(false);
   const [radiusMiles, setRadiusMiles] = useState(15);
   // Departure time of day as minutes since midnight (default 7:30 AM).
   const [departureMinutes, setDepartureMinutes] = useState(450);
@@ -99,6 +104,7 @@ function DashboardPage() {
   // On first load, restore the last scenario (and its saved filters) if one
   // exists, so leaving and returning shows the same filtered map.
   useEffect(() => {
+    if (searchParams.get("scenarioId")) return;
     const savedId = localStorage.getItem(ACTIVE_SCENARIO_KEY);
     if (!savedId) return;
 
@@ -121,7 +127,7 @@ function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [searchParams]);
 
   // Topbar search: uses the currently selected departure time.
   function handleCreateSearch(workAddress: string, searchRadius: number) {
@@ -138,22 +144,31 @@ function DashboardPage() {
   }
 
   async function handleGenerateInsight() {
-    console.log(1);
     if (!scenario) return;
-
-    console.log(1);
 
     setIsGeneratingAI(true);
     try {
       const updatedScenario = await explainScenario(scenario.scenarioId);
-      console.log(2);
 
       setScenario(updatedScenario);
     } catch (err) {
       console.error("AI Generation failed:", err);
-      console.log(3);
     } finally {
       setIsGeneratingAI(false);
+    }
+  }
+
+  async function handleSaveScenario() {
+    if (!scenario || scenario.status === ScenarioStatus.SAVED) return;
+    setIsSavingScenario(true);
+    setError("");
+    try {
+      const savedScenario = await saveScenario(scenario.scenarioId);
+      setScenario(savedScenario);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save scenario.");
+    } finally {
+      setIsSavingScenario(false);
     }
   }
 
@@ -161,6 +176,41 @@ function DashboardPage() {
   const selectedRecommendation = scenario?.recommendations.find(
     (rec) => rec.zone.zoneId === selectedZoneId,
   );
+
+  useEffect(() => {
+    const scenarioId = searchParams.get("scenarioId");
+    if (!scenarioId) return;
+
+    let cancelled = false;
+
+    async function loadScenario() {
+      setIsLoading(true);
+      setError("");
+      try {
+        const loadedScenario = await fetchScenario(scenarioId);
+        if (cancelled) return;
+        setScenario(loadedScenario);
+        setListingsByZone({});
+        localStorage.setItem(ACTIVE_SCENARIO_KEY, loadedScenario.scenarioId);
+        setSelectedZoneId(
+          loadedScenario.recommendations[0]?.zone.zoneId ?? null,
+        );
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error ? err.message : "Failed to load scenario.",
+          );
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    loadScenario();
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams]);
 
   useEffect(() => {
     if (!selectedZoneId || listingsByZone[selectedZoneId]) {
@@ -237,7 +287,10 @@ function DashboardPage() {
             />
             <DetailPanel
               selected={selectedRecommendation}
+              isSaved={scenario.status === ScenarioStatus.SAVED}
+              isSaving={isSavingScenario}
               isGenerating={isGeneratingAI}
+              onSaveScenario={handleSaveScenario}
               onGenerateInsight={handleGenerateInsight}
               listings={
                 selectedZoneId ? (listingsByZone[selectedZoneId] ?? []) : []

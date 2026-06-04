@@ -13,7 +13,9 @@ from app.schemas.scenario import (
 from app.services.scenario_service import (
     create_scenario,
     explain_scenario,
+    list_user_scenarios,
     refine_scenario,
+    save_user_scenario,
     update_preferences,
 )
 
@@ -26,6 +28,14 @@ async def generate_recommendations(
     user: User = Depends(get_current_user),
 ) -> ScenarioResponse:
     return await create_scenario(req, user.user_id)
+
+
+@router.get("", response_model=list[ScenarioResponse])
+async def list_current_user_scenarios(
+    saved_only: bool = True,
+    user: User = Depends(get_current_user),
+) -> list[ScenarioResponse]:
+    return list_user_scenarios(user.user_id, saved_only=saved_only)
 
 
 @router.get("/{scenario_id}", response_model=ScenarioResponse)
@@ -46,6 +56,14 @@ async def update_scenario_preferences(
     user: User = Depends(get_current_user),
 ) -> ScenarioResponse:
     return update_preferences(scenario_id, req, user.user_id)
+
+
+@router.post("/{scenario_id}/save", response_model=ScenarioResponse)
+async def save_scenario_for_later(
+    scenario_id: str,
+    user: User = Depends(get_current_user),
+) -> ScenarioResponse:
+    return save_user_scenario(scenario_id, user.user_id)
 
 
 @router.post("/{scenario_id}/explain", response_model=ScenarioResponse)

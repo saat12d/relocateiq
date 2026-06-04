@@ -50,6 +50,20 @@ export async function fetchScenario(
 }
 
 /**
+ * Fetches scenarios the current user has saved for later reuse.
+ * Maps to: GET /api/v1/scenarios
+ */
+export async function fetchSavedScenarios(): Promise<CommuteScenario[]> {
+  const response = await getWithAuth("/api/v1/scenarios");
+
+  if (!response.ok) {
+    throw new Error("Failed to load saved scenarios.");
+  }
+
+  return response.json();
+}
+
+/**
  * Updates the user's preferences for a specific scenario and recalculates rankings.
  * Maps to: PATCH /api/v1/scenarios/{scenario_id}/preferences
  */
@@ -64,6 +78,22 @@ export async function updateScenarioPreferences(
 
   if (!response.ok) {
     throw new Error("Unable to update preferences at this time.");
+  }
+
+  return response.json();
+}
+
+/**
+ * Marks a scenario as saved for the current user.
+ * Maps to: POST /api/v1/scenarios/{scenario_id}/save
+ */
+export async function saveScenario(
+  scenarioId: string,
+): Promise<CommuteScenario> {
+  const response = await postWithAuth(`/api/v1/scenarios/${scenarioId}/save`, {});
+
+  if (!response.ok) {
+    throw new Error("Unable to save this scenario.");
   }
 
   return response.json();
