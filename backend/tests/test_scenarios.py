@@ -280,7 +280,7 @@ async def test_update_preferences_rejects_out_of_range_max_commute(authenticated
 
     response = await client.patch(
         f"/api/v1/scenarios/{scenario_id}/preferences",
-        json={"maxCommuteMinutes": 120},
+        json={"maxCommuteMinutes": 200},
     )
 
     assert response.status_code == 422

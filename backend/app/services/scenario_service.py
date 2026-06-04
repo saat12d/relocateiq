@@ -179,7 +179,7 @@ def _apply_ai_profile_patch(profile: PreferenceProfile, patch: dict) -> None:
             continue
         if internal_key == "max_commute_minutes":
             commute_cap = int(value)
-            if 5 <= commute_cap <= 60:
+            if 5 <= commute_cap <= 120:
                 profile.max_commute_minutes = commute_cap
             continue
         if internal_key == "max_transfers":

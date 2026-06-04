@@ -31,7 +31,7 @@ class UpdatePreferencesRequest(BaseModel):
 
     prefers_transit: bool | None = Field(None, alias="prefersTransit")
     avoid_highways: bool | None = Field(None, alias="avoidHighways")
-    max_commute_minutes: int | None = Field(None, ge=5, le=60, alias="maxCommuteMinutes")
+    max_commute_minutes: int | None = Field(None, ge=5, le=120, alias="maxCommuteMinutes")
 
 
 class RefineScenarioRequest(BaseModel):

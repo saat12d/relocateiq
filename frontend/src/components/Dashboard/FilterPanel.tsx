@@ -80,7 +80,7 @@ export default function FilterPanel({
         <input
           type="range"
           min={5}
-          max={60}
+          max={120}
           step={5}
           value={draftMinutes}
           disabled={isApplying}
@@ -92,7 +92,7 @@ export default function FilterPanel({
         />
         <div className="filter-slider__scale">
           <span>5</span>
-          <span>60</span>
+          <span>120</span>
         </div>
       </div>
     </section>
