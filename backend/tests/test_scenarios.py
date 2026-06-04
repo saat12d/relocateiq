@@ -544,27 +544,24 @@ def test_next_weekday_epoch_uses_requested_time_of_day():
 
 
 @respx.mock
-async def test_create_scenario_forwards_departure_time_to_distance_matrix():
+async def test_create_scenario_forwards_departure_time_to_distance_matrix(authenticated_client):
     import datetime as dt
 
+    client, _user_id = authenticated_client
     respx.get(GEOCODING_URL).mock(
         return_value=httpx.Response(200, json=_geocode_ok_payload())
     )
     captured: dict = {}
     respx.get(DISTANCE_MATRIX_URL).mock(side_effect=_captured_departure_matrix(captured))
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        response = await client.post(
-            "/api/v1/scenarios",
-            json={
-                "workplaceAddress": "UCLA, Los Angeles, CA",
-                "maxRadiusMiles": 15,
-                "departureTimeMinutes": 450,  # 7:30 AM
-            },
-        )
+    response = await client.post(
+        "/api/v1/scenarios",
+        json={
+            "workplaceAddress": "UCLA, Los Angeles, CA",
+            "maxRadiusMiles": 15,
+            "departureTimeMinutes": 450,  # 7:30 AM
+        },
+    )
 
     assert response.status_code == 201
     assert captured["departure_time"] is not None
@@ -574,23 +571,20 @@ async def test_create_scenario_forwards_departure_time_to_distance_matrix():
 
 
 @respx.mock
-async def test_create_scenario_defaults_departure_time_when_omitted():
+async def test_create_scenario_defaults_departure_time_when_omitted(authenticated_client):
     import datetime as dt
 
+    client, _user_id = authenticated_client
     respx.get(GEOCODING_URL).mock(
         return_value=httpx.Response(200, json=_geocode_ok_payload())
     )
     captured: dict = {}
     respx.get(DISTANCE_MATRIX_URL).mock(side_effect=_captured_departure_matrix(captured))
 
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        response = await client.post(
-            "/api/v1/scenarios",
-            json={"workplaceAddress": "UCLA, Los Angeles, CA", "maxRadiusMiles": 15},
-        )
+    response = await client.post(
+        "/api/v1/scenarios",
+        json={"workplaceAddress": "UCLA, Los Angeles, CA", "maxRadiusMiles": 15},
+    )
 
     assert response.status_code == 201
     assert captured["departure_time"] is not None
@@ -598,27 +592,24 @@ async def test_create_scenario_defaults_departure_time_when_omitted():
     assert forwarded.hour == 8 and forwarded.minute == 0  # default rush hour
 
 
-async def test_create_scenario_rejects_out_of_range_departure_time():
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        too_late = await client.post(
-            "/api/v1/scenarios",
-            json={
-                "workplaceAddress": "UCLA, Los Angeles, CA",
-                "maxRadiusMiles": 15,
-                "departureTimeMinutes": 1500,  # > 1439
-            },
-        )
-        negative = await client.post(
-            "/api/v1/scenarios",
-            json={
-                "workplaceAddress": "UCLA, Los Angeles, CA",
-                "maxRadiusMiles": 15,
-                "departureTimeMinutes": -10,
-            },
-        )
+async def test_create_scenario_rejects_out_of_range_departure_time(authenticated_client):
+    client, _user_id = authenticated_client
+    too_late = await client.post(
+        "/api/v1/scenarios",
+        json={
+            "workplaceAddress": "UCLA, Los Angeles, CA",
+            "maxRadiusMiles": 15,
+            "departureTimeMinutes": 1500,  # > 1439
+        },
+    )
+    negative = await client.post(
+        "/api/v1/scenarios",
+        json={
+            "workplaceAddress": "UCLA, Los Angeles, CA",
+            "maxRadiusMiles": 15,
+            "departureTimeMinutes": -10,
+        },
+    )
 
     assert too_late.status_code == 422
     assert negative.status_code == 422
