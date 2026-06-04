@@ -49,21 +49,17 @@ def _compact_zone_payload(recommendation: Recommendation) -> dict[str, Any]:
     }
 
 
-async def generate_zone_summaries(
+async def _generate_batch_summaries(
+    client: AsyncOpenAI,
+    model: str,
     workplace: Workplace,
     preferences: PreferenceProfile,
-    recommendations: list[Recommendation],
-    top_k: int = 5,
+    batch: list[Recommendation],
 ) -> list[str]:
-    top_recs = recommendations[:top_k]
-    if not top_recs:
-        return []
-
-    client, model = _get_openai_client()
     payload = {
         "workplaceAddress": workplace.address,
         "preferences": preferences.model_dump(by_alias=True),
-        "recommendations": [_compact_zone_payload(rec) for rec in top_recs],
+        "recommendations": [_compact_zone_payload(rec) for rec in batch],
     }
     system_prompt = (
         "You are an assistant explaining ranked neighborhood recommendations. "
@@ -99,9 +95,30 @@ async def generate_zone_summaries(
     except Exception as exc:
         raise AIExplanationError(f"Failed to parse explanation response: {exc}") from exc
 
-    if len(summaries) < len(top_recs):
+    if len(summaries) < len(batch):
         raise AIExplanationError("AI returned too few zone summaries")
-    return summaries[: len(top_recs)]
+    return summaries[: len(batch)]
+
+
+async def generate_zone_summaries(
+    workplace: Workplace,
+    preferences: PreferenceProfile,
+    recommendations: list[Recommendation],
+    *,
+    batch_size: int = 5,
+) -> list[str]:
+    if not recommendations:
+        return []
+
+    client, model = _get_openai_client()
+    summaries: list[str] = []
+    for start in range(0, len(recommendations), batch_size):
+        batch = recommendations[start : start + batch_size]
+        batch_summaries = await _generate_batch_summaries(
+            client, model, workplace, preferences, batch
+        )
+        summaries.extend(batch_summaries)
+    return summaries
 
 
 async def parse_refinement(

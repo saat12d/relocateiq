@@ -351,13 +351,15 @@ async def test_explain_scenario_populates_explanations(authenticated_client, mon
     client, _user_id = authenticated_client
     scenario = await _create_ranked_scenario(client)
     scenario_id = scenario["scenarioId"]
+    recommendation_count = len(scenario["recommendations"])
 
     response = await client.post(f"/api/v1/scenarios/{scenario_id}/explain")
 
     assert response.status_code == 200
     payload = response.json()
     assert payload["status"] == "EXPLAINED"
-    assert payload["recommendations"][0]["explanationSummary"] != ""
+    assert len(payload["recommendations"]) == recommendation_count
+    assert all(rec["explanationSummary"] != "" for rec in payload["recommendations"])
 
 
 async def test_explain_scenario_returns_409_when_not_ranked(authenticated_client):

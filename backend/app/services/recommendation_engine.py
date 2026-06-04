@@ -45,7 +45,16 @@ def _commute_score(commute: CommuteAnalysis, preferences: PreferenceProfile) -> 
     return (drive * 0.32) + (transit * 0.32) + (transfers * 0.14) + (walk * 0.1) + (congestion * 0.12)
 
 
-def _lifestyle_score(lifestyle) -> float:
+def _lifestyle_score(lifestyle, preferences: PreferenceProfile) -> float:
+    if preferences.wants_quiet_area:
+        # When the user wants quiet areas, weight quietness at 40% of lifestyle score.
+        return (
+            lifestyle.quietness_score * 0.40
+            + lifestyle.walkability_score * 0.15
+            + lifestyle.grocery_score * 0.15
+            + lifestyle.park_score * 0.15
+            + lifestyle.nightlife_score * 0.15
+        )
     return (
         lifestyle.walkability_score
         + lifestyle.grocery_score
@@ -65,7 +74,8 @@ def _total_score(commute: CommuteAnalysis, lifestyle, preferences: PreferencePro
         commute_weight = 0.72
         lifestyle_weight = 0.28
     return round(
-        (_commute_score(commute, preferences) * commute_weight) + (_lifestyle_score(lifestyle) * lifestyle_weight),
+        (_commute_score(commute, preferences) * commute_weight)
+        + (_lifestyle_score(lifestyle, preferences) * lifestyle_weight),
         2,
     )
 
@@ -128,19 +138,25 @@ def _relevant_commute_minutes(rec: Recommendation, preferences: PreferenceProfil
     return rec.commute_analysis.drive_time_peak_minutes
 
 
+def _meets_filters(rec: Recommendation, preferences: PreferenceProfile) -> bool:
+    if _relevant_commute_minutes(rec, preferences) > preferences.max_commute_minutes:
+        return False
+    if rec.commute_analysis.transfer_count > preferences.max_transfers:
+        return False
+    return True
+
+
 def rerank_with_preferences(
     recommendations: list[Recommendation],
     preferences: PreferenceProfile,
 ) -> list[Recommendation]:
-    # Keep every zone so filters stay reversible. Zones that fail the max-commute
-    # cap are flagged meets_filters=False (the frontend dims them) rather than
-    # dropped. Qualifying zones sort first by score and get ranks 1..N; the rest
-    # keep their score order but get rank 0.
+    # Keep every zone so filters stay reversible. Zones that fail active filters
+    # are flagged meets_filters=False (the frontend dims them) rather than dropped.
+    # Qualifying zones sort first by score and get ranks 1..N; the rest keep
+    # their score order but get rank 0.
     for rec in recommendations:
         rec.total_score = _total_score(rec.commute_analysis, rec.lifestyle_analysis, preferences)
-        rec.meets_filters = (
-            _relevant_commute_minutes(rec, preferences) <= preferences.max_commute_minutes
-        )
+        rec.meets_filters = _meets_filters(rec, preferences)
     ranked = sorted(
         recommendations,
         key=lambda item: (item.meets_filters, item.total_score),
