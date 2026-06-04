@@ -149,6 +149,12 @@ export interface CommuteScenario {
   recommendations: Recommendation[];
 }
 
+/** Response from POST /api/v1/scenarios/{id}/refine */
+export interface RefineScenarioResponse {
+  scenario: CommuteScenario;
+  explanationSummary: string;
+}
+
 /**
  * Represents a specific housing unit within a zone.
  * - listingId: The unique identifier provided by the external housing API (e.g., Zillow).

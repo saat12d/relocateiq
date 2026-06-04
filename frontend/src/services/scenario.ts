@@ -3,6 +3,7 @@ import type {
   CommuteScenario,
   HousingListing,
   PreferenceProfile,
+  RefineScenarioResponse,
 } from "../models/types";
 
 // Matching the CreateScenarioRequest Pydantic schema
@@ -13,6 +14,52 @@ export type CreateScenarioPayload = {
   departureTimeMinutes?: number;
   preferences: Partial<PreferenceProfile>;
 };
+
+/** Thrown when the AI cannot interpret a refinement message (HTTP 422). */
+export class ScenarioClarificationError extends Error {
+  readonly clarifyingPrompt: string;
+
+  constructor(clarifyingPrompt: string) {
+    super(clarifyingPrompt);
+    this.name = "ScenarioClarificationError";
+    this.clarifyingPrompt = clarifyingPrompt;
+  }
+}
+
+async function throwScenarioError(
+  response: Response,
+  fallback: string,
+): Promise<never> {
+  let body: { detail?: unknown } | null = null;
+  try {
+    body = await response.json();
+  } catch {
+    // Response had no JSON body.
+  }
+
+  const detail = body?.detail;
+  if (
+    response.status === 422 &&
+    detail &&
+    typeof detail === "object" &&
+    "clarifyingPrompt" in detail &&
+    typeof (detail as { clarifyingPrompt: unknown }).clarifyingPrompt === "string"
+  ) {
+    throw new ScenarioClarificationError(
+      (detail as { clarifyingPrompt: string }).clarifyingPrompt,
+    );
+  }
+
+  if (typeof detail === "string") {
+    throw new Error(detail);
+  }
+
+  if (response.status === 502) {
+    throw new Error("AI service unavailable. Please try again.");
+  }
+
+  throw new Error(fallback);
+}
 
 /**
  * Generates a new commute scenario and ranks neighborhoods.
@@ -106,14 +153,33 @@ export async function saveScenario(
 export async function explainScenario(
   scenarioId: string,
 ): Promise<CommuteScenario> {
-  // Use postWithAuth to ensure the JWT token is injected and Vite proxies the URL correctly
   const response = await postWithAuth(
     `/api/v1/scenarios/${scenarioId}/explain`,
     {},
   );
 
   if (!response.ok) {
-    throw new Error("Failed to generate AI explanation");
+    await throwScenarioError(response, "Failed to generate AI explanations.");
+  }
+
+  return response.json();
+}
+
+/**
+ * Parses natural-language preferences, re-ranks zones, and returns an explanation.
+ * Maps to: POST /api/v1/scenarios/{scenario_id}/refine
+ */
+export async function refineScenario(
+  scenarioId: string,
+  userMessage: string,
+): Promise<RefineScenarioResponse> {
+  const response = await postWithAuth(
+    `/api/v1/scenarios/${scenarioId}/refine`,
+    { userMessage },
+  );
+
+  if (!response.ok) {
+    await throwScenarioError(response, "Failed to refine recommendations.");
   }
 
   return response.json();
