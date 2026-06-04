@@ -324,6 +324,61 @@ def get_scenario(scenario_id: str, user_id: str) -> ScenarioResponse | None:
         db.close()
 
 
+def list_scenarios(user_id: str, saved_only: bool = False) -> list[ScenarioResponse]:
+    db = _get_session()
+    if db is None:
+        scenarios = [
+            deepcopy(scenario)
+            for scenario_id, scenario in _store.items()
+            if _scenario_owners.get(scenario_id) == user_id
+        ]
+        if saved_only:
+            scenarios = [
+                scenario
+                for scenario in scenarios
+                if scenario.status == ScenarioStatus.SAVED
+            ]
+        return sorted(scenarios, key=lambda scenario: scenario.created_at, reverse=True)
+
+    models = _db_models()
+    CommuteScenario = models["CommuteScenario"]
+    RecommendationModel = models["Recommendation"]
+    DbScenarioStatus = models["ScenarioStatus"]
+    try:
+        stmt = (
+            select(CommuteScenario)
+            .where(CommuteScenario.user_id == user_id)
+            .options(
+                joinedload(CommuteScenario.workplace),
+                joinedload(CommuteScenario.preference_profile),
+                joinedload(CommuteScenario.recommendations).joinedload(RecommendationModel.zone),
+                joinedload(CommuteScenario.recommendations).joinedload(RecommendationModel.commute_analysis),
+                joinedload(CommuteScenario.recommendations).joinedload(RecommendationModel.lifestyle_analysis),
+            )
+            .order_by(CommuteScenario.created_at.desc())
+        )
+        if saved_only:
+            stmt = stmt.where(CommuteScenario.status == _to_db_status(ScenarioStatus.SAVED, DbScenarioStatus))
+        rows = db.execute(stmt).unique().scalars().all()
+        return [_to_schema_response(row) for row in rows]
+    except Exception:
+        _disable_db()
+        scenarios = [
+            deepcopy(scenario)
+            for scenario_id, scenario in _store.items()
+            if _scenario_owners.get(scenario_id) == user_id
+        ]
+        if saved_only:
+            scenarios = [
+                scenario
+                for scenario in scenarios
+                if scenario.status == ScenarioStatus.SAVED
+            ]
+        return sorted(scenarios, key=lambda scenario: scenario.created_at, reverse=True)
+    finally:
+        db.close()
+
+
 def update_status(
     scenario_id: str,
     status: ScenarioStatus,
