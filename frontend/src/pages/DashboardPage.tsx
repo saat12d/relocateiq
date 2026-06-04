@@ -363,7 +363,11 @@ function DashboardPage() {
               <button
                 className="compare-route-button"
                 onClick={goToComparison}
-                disabled={!scenario || scenario.recommendations.length < 2}
+                disabled={
+                  !scenario ||
+                  scenario.recommendations.filter((rec) => rec.meetsFilters)
+                    .length < 2
+                }
               >
                 Compare Neighborhoods &rarr;
               </button>

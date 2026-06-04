@@ -3,8 +3,9 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { fetchScenario } from "../services/scenario";
 import type { CommuteScenario, Recommendation } from "../models/types";
 import "../components/Comparison/Comparison.css";
+import { userSignedInRequirement, withRequirements } from "../lib/Requirements";
 
-export default function ComparisonPage() {
+function ComparisonPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -33,12 +34,16 @@ export default function ComparisonPage() {
 
         setScenario(loadedScenario);
 
+        const validRecs = loadedScenario.recommendations.filter(
+          (r) => r.meetsFilters,
+        );
+
         // Default to the top 2 ranked neighborhoods if available
-        if (loadedScenario.recommendations.length >= 2) {
-          setZoneAId(loadedScenario.recommendations[0].zone.zoneId);
-          setZoneBId(loadedScenario.recommendations[1].zone.zoneId);
-        } else if (loadedScenario.recommendations.length === 1) {
-          setZoneAId(loadedScenario.recommendations[0].zone.zoneId);
+        if (validRecs.length >= 2) {
+          setZoneAId(validRecs[0].zone.zoneId);
+          setZoneBId(validRecs[1].zone.zoneId);
+        } else if (validRecs.length === 1) {
+          setZoneAId(validRecs[0].zone.zoneId);
         }
       } catch (err) {
         if (!cancelled) setError("Failed to load comparison data.");
@@ -62,6 +67,10 @@ export default function ComparisonPage() {
   const zoneA = scenario.recommendations.find((r) => r.zone.zoneId === zoneAId);
   const zoneB = scenario.recommendations.find((r) => r.zone.zoneId === zoneBId);
 
+  const validRecommendations = scenario.recommendations.filter(
+    (r) => r.meetsFilters,
+  );
+
   // Reusable dropdown component for the table headers
   const ZoneSelector = ({
     selectedId,
@@ -78,11 +87,12 @@ export default function ComparisonPage() {
       <option value="" disabled>
         Select a neighborhood...
       </option>
-      {scenario.recommendations.map((rec) => (
+      {validRecommendations.map((rec) => (
         <option key={rec.zone.zoneId} value={rec.zone.zoneId}>
-          {rec.rank}. {rec.zone.name}
+          {rec.rank > 0 ? `${rec.rank}. ` : ""}
+          {rec.zone.name}
         </option>
-      ))}
+      ))}{" "}
     </select>
   );
 
@@ -177,3 +187,5 @@ export default function ComparisonPage() {
     </main>
   );
 }
+
+export default withRequirements(ComparisonPage, [userSignedInRequirement]);
