@@ -214,6 +214,70 @@ async def test_fetch_scenario_returns_404_for_other_user(authenticated_client):
 
 
 @respx.mock
+async def test_save_scenario_lists_only_saved_scenarios(authenticated_client):
+    client, _user_id = authenticated_client
+    scenario = await _create_ranked_scenario(client)
+    scenario_id = scenario["scenarioId"]
+
+    before_save = await client.get("/api/v1/scenarios")
+    assert before_save.status_code == 200
+    assert before_save.json() == []
+
+    save_response = await client.post(f"/api/v1/scenarios/{scenario_id}/save")
+    assert save_response.status_code == 200
+    saved_payload = save_response.json()
+    assert saved_payload["scenarioId"] == scenario_id
+    assert saved_payload["status"] == "SAVED"
+
+    saved_list = await client.get("/api/v1/scenarios")
+    assert saved_list.status_code == 200
+    payload = saved_list.json()
+    assert [item["scenarioId"] for item in payload] == [scenario_id]
+    assert payload[0]["status"] == "SAVED"
+
+
+@respx.mock
+async def test_list_scenarios_can_include_unsaved_searches(authenticated_client):
+    client, _user_id = authenticated_client
+    scenario = await _create_ranked_scenario(client)
+
+    response = await client.get("/api/v1/scenarios?saved_only=false")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert [item["scenarioId"] for item in payload] == [scenario["scenarioId"]]
+    assert payload[0]["status"] == "RANKED"
+
+
+@respx.mock
+async def test_save_scenario_returns_404_for_other_user(authenticated_client):
+    owner_client, _owner_id = authenticated_client
+    scenario = await _create_ranked_scenario(owner_client)
+    scenario_id = scenario["scenarioId"]
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://test",
+    ) as guest_client:
+        other_signup = await guest_client.post(
+            "/api/v1/auth/signup",
+            json={
+                "email": "save-other-user@example.com",
+                "name": "Other Save User",
+                "password": "password123",
+            },
+        )
+        assert other_signup.status_code == 201
+        other_token = other_signup.json()["access_token"]
+        response = await guest_client.post(
+            f"/api/v1/scenarios/{scenario_id}/save",
+            headers={"Authorization": f"Bearer {other_token}"},
+        )
+
+    assert response.status_code == 404
+
+
+@respx.mock
 async def test_update_preferences_reranks_and_filters_zones(authenticated_client):
     client, _user_id = authenticated_client
     scenario = await _create_ranked_scenario(client)
@@ -548,6 +612,7 @@ def test_next_weekday_epoch_uses_requested_time_of_day():
 @respx.mock
 async def test_create_scenario_forwards_departure_time_to_distance_matrix(authenticated_client):
     import datetime as dt
+    client, _user_id = authenticated_client
 
     client, _user_id = authenticated_client
     respx.get(GEOCODING_URL).mock(
@@ -575,6 +640,7 @@ async def test_create_scenario_forwards_departure_time_to_distance_matrix(authen
 @respx.mock
 async def test_create_scenario_defaults_departure_time_when_omitted(authenticated_client):
     import datetime as dt
+    client, _user_id = authenticated_client
 
     client, _user_id = authenticated_client
     respx.get(GEOCODING_URL).mock(

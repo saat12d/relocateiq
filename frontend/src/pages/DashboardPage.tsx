@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Topbar from "../components/Dashboard/Topbar";
 import FilterPanel from "../components/Dashboard/FilterPanel";
 import AiRefinementPanel from "../components/Dashboard/AiRefinementPanel";
@@ -16,6 +17,7 @@ import {
   fetchZoneListings,
   refineScenario,
   ScenarioClarificationError,
+  saveScenario,
   updateScenarioPreferences,
 } from "../services/scenario";
 import type {
@@ -42,9 +44,11 @@ function pickSelectedZoneId(
 }
 
 function DashboardPage() {
+  const [searchParams] = useSearchParams();
   const [scenario, setScenario] = useState<CommuteScenario | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isSavingScenario, setIsSavingScenario] = useState(false);
   const [radiusMiles, setRadiusMiles] = useState(15);
   const [departureMinutes, setDepartureMinutes] = useState(450);
 
@@ -167,7 +171,25 @@ function DashboardPage() {
     }
   }
 
+  async function handleSaveScenario() {
+    if (!scenario || scenario.status === ScenarioStatus.SAVED) return;
+
+    setIsSavingScenario(true);
+    setError("");
+    try {
+      const savedScenario = await saveScenario(scenario.scenarioId);
+      setScenario(savedScenario);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save scenario.");
+    } finally {
+      setIsSavingScenario(false);
+    }
+  }
+
+  // Restore the last active scenario from localStorage when not opening via URL.
   useEffect(() => {
+    if (searchParams.get("scenarioId")) return;
+
     const savedId = localStorage.getItem(ACTIVE_SCENARIO_KEY);
     if (!savedId) return;
 
@@ -179,9 +201,9 @@ function DashboardPage() {
 
         setScenario(restored);
         setRadiusMiles(restored.searchRadiusMiles);
-        if (restored.recommendations.length > 0) {
-          setSelectedZoneId(restored.recommendations[0].zone.zoneId);
-        }
+        setSelectedZoneId(
+          pickSelectedZoneId(restored.recommendations, null),
+        );
 
         if (restored.status === ScenarioStatus.RANKED) {
           await runExplain(restored.scenarioId);
@@ -194,7 +216,7 @@ function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [runExplain]);
+  }, [runExplain, searchParams]);
 
   function handleCreateSearch(workAddress: string, searchRadius: number) {
     return runSearch(workAddress, searchRadius, departureMinutes);
@@ -215,22 +237,68 @@ function DashboardPage() {
     scenario?.status === ScenarioStatus.EXPLAINED ||
     scenario?.status === ScenarioStatus.SAVED;
 
+  // Open a saved scenario from /dashboard?scenarioId=...
   useEffect(() => {
-    if (!selectedZoneId || listingsByZone[selectedZoneId]) {
+    const scenarioIdFromUrl = searchParams.get("scenarioId");
+    if (!scenarioIdFromUrl) return;
+
+    let cancelled = false;
+
+    async function loadScenario(id: string) {
+      setIsLoading(true);
+      setError("");
+      setRefinementSummary(null);
+      setClarifyingPrompt(null);
+
+      try {
+        const loadedScenario = await fetchScenario(id);
+        if (cancelled) return;
+
+        setScenario(loadedScenario);
+        setListingsByZone({});
+        setRadiusMiles(loadedScenario.searchRadiusMiles);
+        localStorage.setItem(ACTIVE_SCENARIO_KEY, loadedScenario.scenarioId);
+        setSelectedZoneId(
+          pickSelectedZoneId(loadedScenario.recommendations, null),
+        );
+
+        if (loadedScenario.status === ScenarioStatus.RANKED) {
+          await runExplain(loadedScenario.scenarioId);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error ? err.message : "Failed to load scenario.",
+          );
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    loadScenario(scenarioIdFromUrl);
+    return () => {
+      cancelled = true;
+    };
+  }, [runExplain, searchParams]);
+
+  useEffect(() => {
+    const zoneId = selectedZoneId;
+    if (!zoneId || listingsByZone[zoneId]) {
       setListingsStatus("idle");
       return;
     }
 
     let cancelled = false;
 
-    async function loadListings() {
+    async function loadListings(id: string) {
       setListingsStatus("loading");
       try {
-        const listings = await fetchZoneListings(selectedZoneId);
+        const listings = await fetchZoneListings(id);
         if (cancelled) return;
         setListingsByZone((current) => ({
           ...current,
-          [selectedZoneId]: listings,
+          [id]: listings,
         }));
         setListingsStatus("idle");
       } catch {
@@ -238,7 +306,7 @@ function DashboardPage() {
       }
     }
 
-    loadListings();
+    loadListings(zoneId);
     return () => {
       cancelled = true;
     };
@@ -297,6 +365,9 @@ function DashboardPage() {
             <DetailPanel
               selected={selectedRecommendation}
               isExplaining={isExplaining}
+              isSaved={scenario.status === ScenarioStatus.SAVED}
+              isSaving={isSavingScenario}
+              onSaveScenario={handleSaveScenario}
               listings={
                 selectedZoneId ? (listingsByZone[selectedZoneId] ?? []) : []
               }

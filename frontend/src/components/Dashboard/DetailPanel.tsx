@@ -1,5 +1,5 @@
 import React from "react";
-import type { CommuteScenario, HousingListing } from "../models/types";
+import type { CommuteScenario, HousingListing } from "../../models/types";
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
   const tone = value >= 70 ? "green" : value >= 60 ? "amber" : "red";
@@ -22,6 +22,9 @@ type Recommendation = CommuteScenario["recommendations"][0];
 type DetailPanelProps = {
   selected: Recommendation;
   isExplaining: boolean;
+  isSaved: boolean;
+  isSaving: boolean;
+  onSaveScenario: () => void;
   listings: HousingListing[];
   listingsStatus: "idle" | "loading" | "error";
 };
@@ -29,6 +32,9 @@ type DetailPanelProps = {
 export default function DetailPanel({
   selected,
   isExplaining,
+  isSaved,
+  isSaving,
+  onSaveScenario,
   listings,
   listingsStatus,
 }: DetailPanelProps) {
@@ -48,8 +54,14 @@ export default function DetailPanel({
             total commute
           </p>
         </div>
-        <button type="button" aria-label="Save neighborhood">
-          ♡
+        <button
+          className="save-scenario-button"
+          type="button"
+          onClick={onSaveScenario}
+          disabled={isSaved || isSaving}
+          aria-label={isSaved ? "Scenario saved" : "Save scenario"}
+        >
+          {isSaving ? "Saving" : isSaved ? "Saved" : "Save"}
         </button>
       </div>
       <section className="commute-summary" aria-label="Commute breakdown">
