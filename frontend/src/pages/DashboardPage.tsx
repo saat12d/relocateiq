@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Topbar from "../components/Dashboard/Topbar";
 import FilterPanel from "../components/Dashboard/FilterPanel";
 import AiRefinementPanel from "../components/Dashboard/AiRefinementPanel";
@@ -35,7 +36,10 @@ function pickSelectedZoneId(
   recommendations: CommuteScenario["recommendations"],
   currentId: string | null,
 ): string | null {
-  if (currentId && recommendations.some((rec) => rec.zone.zoneId === currentId)) {
+  if (
+    currentId &&
+    recommendations.some((rec) => rec.zone.zoneId === currentId)
+  ) {
     return currentId;
   }
   const topRanked =
@@ -64,9 +68,15 @@ function DashboardPage() {
   const [refinementSummary, setRefinementSummary] = useState<string | null>(
     null,
   );
-  const [clarifyingPrompt, setClarifyingPrompt] = useState<string | null>(
-    null,
-  );
+  const [clarifyingPrompt, setClarifyingPrompt] = useState<string | null>(null);
+
+  const navigate = useNavigate();
+
+  function goToComparison() {
+    if (scenario) {
+      navigate(`/compare?scenarioId=${scenario.scenarioId}`);
+    }
+  }
 
   const runExplain = useCallback(async (scenarioId: string) => {
     setIsExplaining(true);
@@ -130,15 +140,16 @@ function DashboardPage() {
     setIsApplyingFilters(true);
     setError("");
     try {
-      const updated = await updateScenarioPreferences(scenario.scenarioId, patch);
+      const updated = await updateScenarioPreferences(
+        scenario.scenarioId,
+        patch,
+      );
       setScenario(updated);
       setSelectedZoneId((current) =>
         pickSelectedZoneId(updated.recommendations, current),
       );
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to apply filters.",
-      );
+      setError(err instanceof Error ? err.message : "Failed to apply filters.");
     } finally {
       setIsApplyingFilters(false);
     }
@@ -164,7 +175,9 @@ function DashboardPage() {
         return;
       }
       setError(
-        err instanceof Error ? err.message : "Failed to refine recommendations.",
+        err instanceof Error
+          ? err.message
+          : "Failed to refine recommendations.",
       );
     } finally {
       setIsRefining(false);
@@ -201,9 +214,7 @@ function DashboardPage() {
 
         setScenario(restored);
         setRadiusMiles(restored.searchRadiusMiles);
-        setSelectedZoneId(
-          pickSelectedZoneId(restored.recommendations, null),
-        );
+        setSelectedZoneId(pickSelectedZoneId(restored.recommendations, null));
 
         if (restored.status === ScenarioStatus.RANKED) {
           await runExplain(restored.scenarioId);
@@ -339,6 +350,7 @@ function DashboardPage() {
                 isApplying={isApplyingFilters}
                 onChange={handleFilterChange}
               />
+
               <AiRefinementPanel
                 disabled={!canRefine}
                 isExplaining={isExplaining}
@@ -347,6 +359,18 @@ function DashboardPage() {
                 clarifyingPrompt={clarifyingPrompt}
                 onRefine={handleRefine}
               />
+
+              <button
+                className="compare-route-button"
+                onClick={goToComparison}
+                disabled={
+                  !scenario ||
+                  scenario.recommendations.filter((rec) => rec.meetsFilters)
+                    .length < 2
+                }
+              >
+                Compare Neighborhoods &rarr;
+              </button>
               <ResultsPanel
                 recommendations={scenario.recommendations}
                 selectedId={selectedZoneId}
