@@ -235,16 +235,20 @@ async def test_update_preferences_reranks_and_filters_zones(authenticated_client
     assert len(payload["recommendations"]) == original_count
     for idx, rec in enumerate(payload["recommendations"], start=1):
         assert rec["rank"] == idx
+        assert rec["meetsFilters"] is True
         assert rec["commuteAnalysis"]["transitTimePeakMinutes"] <= 30
 
 
 @respx.mock
-async def test_update_preferences_removes_zones_exceeding_max_commute(authenticated_client):
+async def test_update_preferences_dims_zones_exceeding_max_commute(authenticated_client):
     client, _user_id = authenticated_client
     scenario = await _create_ranked_scenario(client)
     scenario_id = scenario["scenarioId"]
+    original_count = len(scenario["recommendations"])
 
-    # Drive time from mock is 18 mins with traffic; cap at 5 should remove everything.
+    # Drive time from mock is 18 mins with traffic; cap at 5 fails every zone.
+    # Zones are kept but flagged (dimmed) rather than dropped, so the filter is
+    # reversible.
     response = await client.patch(
         f"/api/v1/scenarios/{scenario_id}/preferences",
         json={"maxCommuteMinutes": 5},
@@ -253,7 +257,9 @@ async def test_update_preferences_removes_zones_exceeding_max_commute(authentica
     assert response.status_code == 200
     payload = response.json()
     assert payload["preferenceProfile"]["maxCommuteMinutes"] == 5
-    assert payload["recommendations"] == []
+    assert len(payload["recommendations"]) == original_count
+    assert all(rec["meetsFilters"] is False for rec in payload["recommendations"])
+    assert all(rec["rank"] == 0 for rec in payload["recommendations"])
 
 
 async def test_update_preferences_returns_404_for_unknown_scenario(authenticated_client):

@@ -218,6 +218,8 @@ class Recommendation(Base):
     #AI-generated plain-English explanation of why this zone ranks where it does.
     #nullable because it's only populated once the scenario reaches EXPLAINED state.
     explanation_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    #whether the zone passes the active filters. False zones are dimmed, not dropped.
+    meets_filters: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     #reverse side of CommuteScenario.recommendations (added below). Navigate
     #back to the owning scenario with `recommendation.scenario`.
     scenario: Mapped["CommuteScenario"] = relationship(back_populates="recommendations")
@@ -253,6 +255,8 @@ class CommuteAnalysis(Base):
     )
     #peak hour driving time from the zone to the workplace, in minutes.
     drive_time_peak_minutes:Mapped[float]= mapped_column(Float,nullable=False)
+    #same drive time but routed without highways.
+    drive_time_no_highways_peak_minutes:Mapped[float]= mapped_column(Float,nullable=False,default=0.0)
     #Peak-hour transit time from the zone to the workplace in minutes.
     transit_time_peak_minutes:Mapped[float]= mapped_column(Float,nullable=False)
     #walking time from the zone center to the nearest transit stop, in minutes.

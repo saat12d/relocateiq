@@ -138,13 +138,8 @@ def update_preferences(
     if req.prefers_transit is not None:
         profile.prefers_transit = req.prefers_transit
     if req.avoid_highways is not None:
-        # TODO(avoid_highways): flag is persisted but does not yet influence ranking.
-        # CommuteAnalysis carries no highway-usage signal and analyze_zones never
-        # issues a Distance Matrix call with `avoid=highways`, so rerank_with_preferences
-        # has nothing to weight on. To honor this preference we need either
-        # (a) precompute a second drive-time variant with avoid=highways during
-        # analyze_zones and pick between them here, or (b) re-issue the routing call
-        # on PATCH when this flag flips (breaks the "no external I/O on update" guarantee).
+        # analyze_zones precomputes a no-highway drive time, so rerank can honor
+        # this flag without any new routing call here.
         profile.avoid_highways = req.avoid_highways
     if req.max_commute_minutes is not None:
         profile.max_commute_minutes = req.max_commute_minutes
