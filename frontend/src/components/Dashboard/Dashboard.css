@@ -252,6 +252,13 @@
   margin-left: auto; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 999px;
   background: transparent; color: var(--ink); cursor: pointer; font-size: 18px;
 }
+.zone-panel__header .save-scenario-button {
+  width: auto; min-width: 72px; padding: 0 12px; border-radius: 999px;
+  font-size: 12px; font-weight: 900;
+}
+.zone-panel__header .save-scenario-button:disabled {
+  cursor: default; color: var(--muted); background: rgba(33, 28, 24, 0.06);
+}
 .zone-panel h2 { margin: 0; font-size: 19px; }
 .zone-panel__header p { margin: 4px 0 0; color: var(--muted); font-size: 12px; font-weight: 800; }
 .zone-panel__header p strong { color: var(--green); }

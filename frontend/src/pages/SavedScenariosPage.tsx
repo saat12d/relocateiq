@@ -1,98 +1,67 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import type { CommuteScenario } from "../models/types";
+import { fetchSavedScenarios } from "../services/scenario";
+import { withRequirements, userSignedInRequirement } from "../lib/Requirements";
 import "./SavedScenariosPage.css";
 
-type SavedScenario = {
-  id: string;
-  workplace: string;
-  createdAt: string;
-  radiusMiles: number;
-  topNeighborhood: string;
-  recommendationCount: number;
-  driveMinutes: number;
-  transitMinutes: number;
-  insightState: "AI insights added" | "Needs insights";
-  zones: Array<{
-    rank: number;
-    tone: "green" | "amber" | "red";
-    x: number;
-    y: number;
-  }>;
+type SavedScenarioZone = {
+  rank: number;
+  tone: "green" | "amber" | "red";
+  x: number;
+  y: number;
 };
 
-const savedScenarios: SavedScenario[] = [
-  {
-    id: "scenario-dtla",
-    workplace: "800 Wilshire Blvd, Los Angeles",
-    createdAt: "June 2, 2026",
-    radiusMiles: 15,
-    topNeighborhood: "Downtown LA",
-    recommendationCount: 19,
-    driveMinutes: 8,
-    transitMinutes: 9,
-    insightState: "AI insights added",
-    zones: [
-      { rank: 1, tone: "green", x: 64, y: 34 },
-      { rank: 2, tone: "amber", x: 33, y: 66 },
-      { rank: 3, tone: "amber", x: 40, y: 27 },
-      { rank: 4, tone: "red", x: 72, y: 72 },
-    ],
-  },
-  {
-    id: "scenario-ucla",
-    workplace: "UCLA, Los Angeles",
-    createdAt: "June 1, 2026",
-    radiusMiles: 10,
-    topNeighborhood: "Westwood",
-    recommendationCount: 8,
-    driveMinutes: 6,
-    transitMinutes: 12,
-    insightState: "Needs insights",
-    zones: [
-      { rank: 1, tone: "green", x: 52, y: 38 },
-      { rank: 2, tone: "amber", x: 70, y: 55 },
-      { rank: 3, tone: "amber", x: 30, y: 45 },
-    ],
-  },
-  {
-    id: "scenario-sm",
-    workplace: "Santa Monica Pier",
-    createdAt: "May 30, 2026",
-    radiusMiles: 25,
-    topNeighborhood: "Santa Monica",
-    recommendationCount: 14,
-    driveMinutes: 10,
-    transitMinutes: 18,
-    insightState: "AI insights added",
-    zones: [
-      { rank: 1, tone: "green", x: 35, y: 30 },
-      { rank: 2, tone: "amber", x: 56, y: 48 },
-      { rank: 3, tone: "amber", x: 72, y: 28 },
-      { rank: 4, tone: "red", x: 65, y: 72 },
-    ],
-  },
+const previewPositions: Array<Pick<SavedScenarioZone, "x" | "y">> = [
+  { x: 64, y: 34 },
+  { x: 33, y: 66 },
+  { x: 40, y: 27 },
+  { x: 72, y: 72 },
 ];
 
-function MiniScenarioMap({ scenario }: { scenario: SavedScenario }) {
-  const topZone = scenario.zones[0];
+function getRankTone(rank: number): SavedScenarioZone["tone"] {
+  if (rank === 1) return "green";
+  if (rank <= 3) return "amber";
+  return "red";
+}
+
+function formatDate(value: Date | string) {
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function getPreviewZones(scenario: CommuteScenario): SavedScenarioZone[] {
+  return scenario.recommendations.slice(0, 4).map((recommendation, index) => ({
+    rank: recommendation.rank,
+    tone: getRankTone(recommendation.rank),
+    ...previewPositions[index],
+  }));
+}
+
+function MiniScenarioMap({ scenario }: { scenario: CommuteScenario }) {
+  const zones = getPreviewZones(scenario);
+  const topZone = zones[0] ?? { x: 64, y: 34 };
 
   return (
     <svg
       className="scenario-mini-map"
       viewBox="0 0 100 100"
       role="img"
-      aria-label={`Mini map preview for ${scenario.workplace}`}
+      aria-label={`Mini map preview for ${scenario.workplace.address}`}
     >
       <defs>
-        <pattern id={`${scenario.id}-grid`} width="14" height="14" patternUnits="userSpaceOnUse">
+        <pattern id={`${scenario.scenarioId}-grid`} width="14" height="14" patternUnits="userSpaceOnUse">
           <path d="M 14 0 L 0 0 0 14" fill="none" stroke="rgba(33,28,24,0.09)" strokeWidth="1" />
         </pattern>
       </defs>
-      <rect width="100" height="100" fill={`url(#${scenario.id}-grid)`} />
+      <rect width="100" height="100" fill={`url(#${scenario.scenarioId}-grid)`} />
       <path className="scenario-mini-road scenario-mini-road--one" d="M4 72 C20 63 31 57 45 50 S73 36 96 24" />
       <path className="scenario-mini-road scenario-mini-road--two" d="M18 8 C30 29 45 41 59 50 S81 72 94 92" />
       <circle className="scenario-mini-radius" cx="50" cy="52" r="34" />
-      {scenario.zones.map((zone) => (
+      {zones.map((zone) => (
         <g key={zone.rank}>
           <path
             className={`scenario-mini-zone scenario-mini-zone--${zone.tone}`}
@@ -111,45 +80,55 @@ function MiniScenarioMap({ scenario }: { scenario: SavedScenario }) {
   );
 }
 
-function ScenarioCard({ scenario }: { scenario: SavedScenario }) {
+function ScenarioCard({ scenario }: { scenario: CommuteScenario }) {
+  const topRecommendation = scenario.recommendations[0];
+  const topNeighborhood = topRecommendation?.zone.name ?? "No ranked zones";
+  const driveMinutes = topRecommendation?.commuteAnalysis.driveTimePeakMinutes;
+  const transitMinutes = topRecommendation?.commuteAnalysis.transitTimePeakMinutes;
+  const insightState = scenario.recommendations.some(
+    (recommendation) => recommendation.explanationSummary,
+  )
+    ? "AI insights added"
+    : "Needs insights";
+
   return (
     <article className="scenario-card">
       <MiniScenarioMap scenario={scenario} />
       <div className="scenario-card__body">
         <div className="scenario-card__header">
           <div>
-            <p>{scenario.createdAt}</p>
-            <h2>{scenario.workplace}</h2>
+            <p>{formatDate(scenario.createdAt)}</p>
+            <h2>{scenario.workplace.address}</h2>
           </div>
           <button type="button" aria-label="Scenario actions">...</button>
         </div>
 
         <div className="scenario-card__summary">
-          <span>{scenario.radiusMiles} mi radius</span>
-          <span>{scenario.recommendationCount} areas</span>
-          <span>{scenario.insightState}</span>
+          <span>{scenario.searchRadiusMiles} mi radius</span>
+          <span>{scenario.recommendations.length} areas</span>
+          <span>{insightState}</span>
         </div>
 
         <div className="scenario-card__rank">
           <span>1</span>
           <div>
             <small>Top match</small>
-            <strong>{scenario.topNeighborhood}</strong>
+            <strong>{topNeighborhood}</strong>
           </div>
         </div>
 
         <dl className="scenario-card__metrics">
           <div>
             <dt>Drive</dt>
-            <dd>{scenario.driveMinutes} min</dd>
+            <dd>{driveMinutes ? `${driveMinutes} min` : "--"}</dd>
           </div>
           <div>
             <dt>Transit</dt>
-            <dd>{scenario.transitMinutes} min</dd>
+            <dd>{transitMinutes ? `${transitMinutes} min` : "--"}</dd>
           </div>
         </dl>
 
-        <Link className="scenario-card__open" to={`/dashboard?scenarioId=${scenario.id}`}>
+        <Link className="scenario-card__open" to={`/dashboard?scenarioId=${scenario.scenarioId}`}>
           Open scenario
         </Link>
       </div>
@@ -157,19 +136,45 @@ function ScenarioCard({ scenario }: { scenario: SavedScenario }) {
   );
 }
 
-export default function SavedScenariosPage() {
+function SavedScenariosPage() {
   const [query, setQuery] = useState("");
+  const [scenarios, setScenarios] = useState<CommuteScenario[]>([]);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadScenarios() {
+      setStatus("loading");
+      try {
+        const savedScenarios = await fetchSavedScenarios();
+        if (cancelled) return;
+        setScenarios(savedScenarios);
+        setStatus("ready");
+      } catch (err) {
+        if (!cancelled) setStatus("error");
+      }
+    }
+
+    loadScenarios();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filteredScenarios = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return savedScenarios;
-    return savedScenarios.filter((scenario) =>
-      [scenario.workplace, scenario.topNeighborhood]
+    if (!normalizedQuery) return scenarios;
+    return scenarios.filter((scenario) =>
+      [
+        scenario.workplace.address,
+        scenario.recommendations[0]?.zone.name ?? "",
+      ]
         .join(" ")
         .toLowerCase()
         .includes(normalizedQuery),
     );
-  }, [query]);
+  }, [query, scenarios]);
 
   return (
     <main className="saved-scenarios-page">
@@ -201,19 +206,31 @@ export default function SavedScenariosPage() {
         </select>
       </section>
 
-      {filteredScenarios.length > 0 ? (
+      {status === "loading" ? (
+        <section className="saved-scenarios-empty">
+          <h2>Loading saved scenarios</h2>
+          <p>Fetching your commute searches.</p>
+        </section>
+      ) : status === "error" ? (
+        <section className="saved-scenarios-empty">
+          <h2>Unable to load saved scenarios</h2>
+          <p>Please try refreshing the page.</p>
+        </section>
+      ) : filteredScenarios.length > 0 ? (
         <section className="scenario-grid" aria-label="Saved scenarios">
           {filteredScenarios.map((scenario) => (
-            <ScenarioCard key={scenario.id} scenario={scenario} />
+            <ScenarioCard key={scenario.scenarioId} scenario={scenario} />
           ))}
         </section>
       ) : (
         <section className="saved-scenarios-empty">
           <h2>No saved scenarios found</h2>
-          <p>Try a different search or start a new commute scenario.</p>
+          <p>Try a different search or save a new commute scenario.</p>
           <Link to="/dashboard">Start a search</Link>
         </section>
       )}
     </main>
   );
 }
+
+export default withRequirements(SavedScenariosPage, [userSignedInRequirement]);
