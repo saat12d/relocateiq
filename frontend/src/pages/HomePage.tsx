@@ -104,49 +104,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Section 6: Capability Highlights */}
-      <section className="stats-section" aria-label="Capability highlights">
-        <div className="section-center">
-          <div className="stats-grid">
-            <div className="stat-item">
-              <span className="stat-value">Up to 20</span>
-              <span className="stat-label">neighborhoods ranked per search</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-value">4+</span>
-              <span className="stat-label">
-                lifestyle factors scored (walkability, groceries, parks,
-                quietness)
-              </span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-value">Commute-first</span>
-              <span className="stat-label">
-                drive, transit &amp; traffic in every score
-              </span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-value">&lt; 10s</span>
-              <span className="stat-label">from address to ranked map</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 7: Final CTA */}
-      <section className="cta-section">
-        <div className="cta-inner">
-          <h2 className="cta-heading">Find your neighborhood</h2>
-          <p className="cta-sub">
-            Enter your workplace and see your top-ranked places to live in
-            seconds.
-          </p>
-          <a className="button button--dark cta-btn" href="#start">
-            Start search
-          </a>
-        </div>
-      </section>
-
       {/* Section 8: Footer */}
       <footer className="site-footer">
         <div className="section-center footer-inner">
@@ -162,7 +119,6 @@ export default function HomePage() {
             <p className="footer-tagline">Smarter relocation by commute.</p>
           </div>
           <nav className="footer-links" aria-label="Footer navigation">
-            <a href="#how-it-works">How it works</a>
             <a href="#start">Start search</a>
             <Link to="/login">Log in</Link>
             <Link to="/signup">Sign up</Link>
