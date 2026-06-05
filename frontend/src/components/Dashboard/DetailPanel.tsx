@@ -82,7 +82,6 @@ export default function DetailPanel({
       <section className="score-panel">
         <div className="section-title">
           <h3>Lifestyle scores</h3>
-          <a href="#scores">See all</a>
         </div>
         <ScoreBar
           label="Walkability"
@@ -127,7 +126,6 @@ export default function DetailPanel({
       <section className="listing-panel">
         <div className="section-title">
           <h3>Listings in {selected.zone.name}</h3>
-          <a href="#listings">View all</a>
         </div>
         <div className="listing-grid">
           {listingsStatus === "loading" ? (

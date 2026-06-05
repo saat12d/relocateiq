@@ -71,9 +71,6 @@ export default function ResultsPanel({
           );
         })}
       </div>
-      <button className="show-more-button" type="button">
-        Show more neighborhoods
-      </button>
     </aside>
   );
 }
