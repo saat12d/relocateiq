@@ -41,7 +41,6 @@ export default function AiRefinementPanel({
     <section className="ai-refinement-panel" aria-label="AI preference refinement">
       <div className="ai-refinement-panel__head">
         <h2>Refine with AI</h2>
-        <span>BETA</span>
       </div>
       <p className="ai-refinement-panel__hint">
         Describe what matters to you in plain English and we&apos;ll re-rank
