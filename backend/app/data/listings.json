@@ -1,77 +1,522 @@
-
 {
   "westwood": [
     {
-      "listingId": "ww-001",
-      "address": "1042 Gayley Ave, Los Angeles, CA 90024",
-      "rent": 3200,
-      "bedrooms": 2,
-      "bathrooms": 2.0,
-      "url": "https://www.example.com/listing/ww-001"
-    },
-    {
-      "listingId": "ww-002",
-      "address": "580 Kelton Ave, Los Angeles, CA 90024",
-      "rent": 2450,
+      "listingId": "westwo-001",
+      "address": "100 Gayley Ave, Los Angeles, CA 90024",
+      "rent": 2950,
       "bedrooms": 1,
       "bathrooms": 1.0,
-      "url": "https://www.example.com/listing/ww-002"
+      "url": "https://www.example.com/listing/westwo-001"
+    },
+    {
+      "listingId": "westwo-002",
+      "address": "117 Levering Ave, Los Angeles, CA 90024",
+      "rent": 3200,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/westwo-002"
+    },
+    {
+      "listingId": "westwo-003",
+      "address": "134 Westholme Ave, Los Angeles, CA 90024",
+      "rent": 3550,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/westwo-003"
     }
   ],
   "santa-monica": [
     {
-      "listingId": "sm-001",
-      "address": "1320 2nd St, Santa Monica, CA 90401",
-      "rent": 3800,
-      "bedrooms": 2,
-      "bathrooms": 2.0,
-      "url": "https://www.example.com/listing/sm-001"
-    },
-    {
-      "listingId": "sm-002",
-      "address": "825 Lincoln Blvd, Santa Monica, CA 90403",
-      "rent": 2900,
+      "listingId": "santam-001",
+      "address": "100 2nd St, Santa Monica, CA 90401",
+      "rent": 3550,
       "bedrooms": 1,
       "bathrooms": 1.0,
-      "url": "https://www.example.com/listing/sm-002"
+      "url": "https://www.example.com/listing/santam-001"
+    },
+    {
+      "listingId": "santam-002",
+      "address": "117 Lincoln Blvd, Santa Monica, CA 90403",
+      "rent": 3800,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/santam-002"
+    },
+    {
+      "listingId": "santam-003",
+      "address": "134 Ocean Ave, Santa Monica, CA 90402",
+      "rent": 4150,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/santam-003"
+    }
+  ],
+  "venice": [
+    {
+      "listingId": "venice-001",
+      "address": "100 Abbot Kinney Blvd, Venice, CA 90291",
+      "rent": 3350,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/venice-001"
+    },
+    {
+      "listingId": "venice-002",
+      "address": "117 Pacific Ave, Venice, CA 90291",
+      "rent": 3600,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/venice-002"
+    },
+    {
+      "listingId": "venice-003",
+      "address": "134 Main St, Venice, CA 90291",
+      "rent": 3950,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/venice-003"
     }
   ],
   "culver-city": [
     {
-      "listingId": "cc-001",
-      "address": "9300 Culver Blvd, Culver City, CA 90232",
+      "listingId": "culver-001",
+      "address": "100 Culver Blvd, Culver City, CA 90232",
+      "rent": 2850,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/culver-001"
+    },
+    {
+      "listingId": "culver-002",
+      "address": "117 Washington Blvd, Culver City, CA 90232",
       "rent": 3100,
       "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/culver-002"
+    },
+    {
+      "listingId": "culver-003",
+      "address": "134 Duquesne Ave, Culver City, CA 90232",
+      "rent": 3450,
+      "bedrooms": 2,
       "bathrooms": 2.0,
-      "url": "https://www.example.com/listing/cc-001"
+      "url": "https://www.example.com/listing/culver-003"
+    }
+  ],
+  "mar-vista": [
+    {
+      "listingId": "marvis-001",
+      "address": "100 Venice Blvd, Los Angeles, CA 90066",
+      "rent": 2650,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/marvis-001"
+    },
+    {
+      "listingId": "marvis-002",
+      "address": "117 Grand View Blvd, Los Angeles, CA 90066",
+      "rent": 2900,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/marvis-002"
+    },
+    {
+      "listingId": "marvis-003",
+      "address": "134 Palms Blvd, Los Angeles, CA 90066",
+      "rent": 3250,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/marvis-003"
+    }
+  ],
+  "playa-vista": [
+    {
+      "listingId": "playav-001",
+      "address": "100 Millennium Dr, Los Angeles, CA 90094",
+      "rent": 3250,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/playav-001"
+    },
+    {
+      "listingId": "playav-002",
+      "address": "117 Playa Vista Dr, Los Angeles, CA 90094",
+      "rent": 3500,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/playav-002"
+    },
+    {
+      "listingId": "playav-003",
+      "address": "134 Jazz Ct, Los Angeles, CA 90094",
+      "rent": 3850,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/playav-003"
+    }
+  ],
+  "west-la": [
+    {
+      "listingId": "westla-001",
+      "address": "100 Sawtelle Blvd, Los Angeles, CA 90025",
+      "rent": 2700,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/westla-001"
+    },
+    {
+      "listingId": "westla-002",
+      "address": "117 Olympic Blvd, Los Angeles, CA 90064",
+      "rent": 2950,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/westla-002"
+    },
+    {
+      "listingId": "westla-003",
+      "address": "134 Barrington Ave, Los Angeles, CA 90025",
+      "rent": 3300,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/westla-003"
+    }
+  ],
+  "brentwood": [
+    {
+      "listingId": "brentw-001",
+      "address": "100 San Vicente Blvd, Los Angeles, CA 90049",
+      "rent": 3450,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/brentw-001"
+    },
+    {
+      "listingId": "brentw-002",
+      "address": "117 Bundy Dr, Los Angeles, CA 90049",
+      "rent": 3700,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/brentw-002"
+    },
+    {
+      "listingId": "brentw-003",
+      "address": "134 Gorham Ave, Los Angeles, CA 90049",
+      "rent": 4050,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/brentw-003"
+    }
+  ],
+  "beverly-hills": [
+    {
+      "listingId": "beverl-001",
+      "address": "100 Wilshire Blvd, Beverly Hills, CA 90212",
+      "rent": 3950,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/beverl-001"
+    },
+    {
+      "listingId": "beverl-002",
+      "address": "117 Rexford Dr, Beverly Hills, CA 90210",
+      "rent": 4200,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/beverl-002"
+    },
+    {
+      "listingId": "beverl-003",
+      "address": "134 Canon Dr, Beverly Hills, CA 90210",
+      "rent": 4550,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/beverl-003"
+    }
+  ],
+  "west-hollywood": [
+    {
+      "listingId": "westho-001",
+      "address": "100 Santa Monica Blvd, West Hollywood, CA 90069",
+      "rent": 3250,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/westho-001"
+    },
+    {
+      "listingId": "westho-002",
+      "address": "117 Laurel Ave, West Hollywood, CA 90048",
+      "rent": 3500,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/westho-002"
+    },
+    {
+      "listingId": "westho-003",
+      "address": "134 Harper Ave, West Hollywood, CA 90046",
+      "rent": 3850,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/westho-003"
+    }
+  ],
+  "hollywood": [
+    {
+      "listingId": "hollyw-001",
+      "address": "100 Hollywood Blvd, Los Angeles, CA 90028",
+      "rent": 2450,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/hollyw-001"
+    },
+    {
+      "listingId": "hollyw-002",
+      "address": "117 Vine St, Los Angeles, CA 90028",
+      "rent": 2700,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/hollyw-002"
+    },
+    {
+      "listingId": "hollyw-003",
+      "address": "134 Cherokee Ave, Los Angeles, CA 90028",
+      "rent": 3050,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/hollyw-003"
+    }
+  ],
+  "los-feliz": [
+    {
+      "listingId": "losfel-001",
+      "address": "100 Hillhurst Ave, Los Angeles, CA 90027",
+      "rent": 2650,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/losfel-001"
+    },
+    {
+      "listingId": "losfel-002",
+      "address": "117 Vermont Ave, Los Angeles, CA 90027",
+      "rent": 2900,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/losfel-002"
+    },
+    {
+      "listingId": "losfel-003",
+      "address": "134 Russell Ave, Los Angeles, CA 90027",
+      "rent": 3250,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/losfel-003"
     }
   ],
   "silver-lake": [
     {
-      "listingId": "sl-001",
-      "address": "2700 Silver Lake Blvd, Los Angeles, CA 90039",
+      "listingId": "silver-001",
+      "address": "100 Silver Lake Blvd, Los Angeles, CA 90039",
+      "rent": 2600,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/silver-001"
+    },
+    {
+      "listingId": "silver-002",
+      "address": "117 Sunset Blvd, Los Angeles, CA 90026",
       "rent": 2850,
       "bedrooms": 2,
       "bathrooms": 1.0,
-      "url": "https://www.example.com/listing/sl-001"
+      "url": "https://www.example.com/listing/silver-002"
     },
     {
-      "listingId": "sl-002",
-      "address": "1500 Micheltorena St, Los Angeles, CA 90026",
-      "rent": 2200,
+      "listingId": "silver-003",
+      "address": "134 Glendale Blvd, Los Angeles, CA 90039",
+      "rent": 3200,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/silver-003"
+    }
+  ],
+  "echo-park": [
+    {
+      "listingId": "echopa-001",
+      "address": "100 Echo Park Ave, Los Angeles, CA 90026",
+      "rent": 2350,
       "bedrooms": 1,
       "bathrooms": 1.0,
-      "url": "https://www.example.com/listing/sl-002"
+      "url": "https://www.example.com/listing/echopa-001"
+    },
+    {
+      "listingId": "echopa-002",
+      "address": "117 Sunset Blvd, Los Angeles, CA 90026",
+      "rent": 2600,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/echopa-002"
+    },
+    {
+      "listingId": "echopa-003",
+      "address": "134 Lemoyne St, Los Angeles, CA 90026",
+      "rent": 2950,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/echopa-003"
+    }
+  ],
+  "downtown-la": [
+    {
+      "listingId": "downto-001",
+      "address": "100 Figueroa St, Los Angeles, CA 90017",
+      "rent": 2650,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/downto-001"
+    },
+    {
+      "listingId": "downto-002",
+      "address": "117 Spring St, Los Angeles, CA 90013",
+      "rent": 2900,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/downto-002"
+    },
+    {
+      "listingId": "downto-003",
+      "address": "134 Olive St, Los Angeles, CA 90014",
+      "rent": 3250,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/downto-003"
     }
   ],
   "koreatown": [
     {
-      "listingId": "kt-001",
-      "address": "3400 W 6th St, Los Angeles, CA 90020",
+      "listingId": "koreat-001",
+      "address": "100 Wilshire Blvd, Los Angeles, CA 90010",
+      "rent": 2150,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/koreat-001"
+    },
+    {
+      "listingId": "koreat-002",
+      "address": "117 S Western Ave, Los Angeles, CA 90005",
       "rent": 2400,
       "bedrooms": 2,
       "bathrooms": 1.0,
-      "url": "https://www.example.com/listing/kt-001"
+      "url": "https://www.example.com/listing/koreat-002"
+    },
+    {
+      "listingId": "koreat-003",
+      "address": "134 S Vermont Ave, Los Angeles, CA 90020",
+      "rent": 2750,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/koreat-003"
+    }
+  ],
+  "mid-city": [
+    {
+      "listingId": "midcit-001",
+      "address": "100 La Brea Ave, Los Angeles, CA 90036",
+      "rent": 2250,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/midcit-001"
+    },
+    {
+      "listingId": "midcit-002",
+      "address": "117 Venice Blvd, Los Angeles, CA 90019",
+      "rent": 2500,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/midcit-002"
+    },
+    {
+      "listingId": "midcit-003",
+      "address": "134 Crenshaw Blvd, Los Angeles, CA 90016",
+      "rent": 2850,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/midcit-003"
+    }
+  ],
+  "miracle-mile": [
+    {
+      "listingId": "miracl-001",
+      "address": "100 Wilshire Blvd, Los Angeles, CA 90036",
+      "rent": 2650,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/miracl-001"
+    },
+    {
+      "listingId": "miracl-002",
+      "address": "117 Hauser Blvd, Los Angeles, CA 90036",
+      "rent": 2900,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/miracl-002"
+    },
+    {
+      "listingId": "miracl-003",
+      "address": "134 Curson Ave, Los Angeles, CA 90036",
+      "rent": 3250,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/miracl-003"
+    }
+  ],
+  "pasadena": [
+    {
+      "listingId": "pasade-001",
+      "address": "100 Colorado Blvd, Pasadena, CA 91105",
+      "rent": 2700,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/pasade-001"
+    },
+    {
+      "listingId": "pasade-002",
+      "address": "117 Lake Ave, Pasadena, CA 91101",
+      "rent": 2950,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/pasade-002"
+    },
+    {
+      "listingId": "pasade-003",
+      "address": "134 Fair Oaks Ave, Pasadena, CA 91105",
+      "rent": 3300,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/pasade-003"
+    }
+  ],
+  "long-beach-downtown": [
+    {
+      "listingId": "longbe-001",
+      "address": "100 Ocean Blvd, Long Beach, CA 90802",
+      "rent": 2150,
+      "bedrooms": 1,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/longbe-001"
+    },
+    {
+      "listingId": "longbe-002",
+      "address": "117 Pine Ave, Long Beach, CA 90802",
+      "rent": 2400,
+      "bedrooms": 2,
+      "bathrooms": 1.0,
+      "url": "https://www.example.com/listing/longbe-002"
+    },
+    {
+      "listingId": "longbe-003",
+      "address": "134 Broadway, Long Beach, CA 90802",
+      "rent": 2750,
+      "bedrooms": 2,
+      "bathrooms": 2.0,
+      "url": "https://www.example.com/listing/longbe-003"
     }
   ]
 }
