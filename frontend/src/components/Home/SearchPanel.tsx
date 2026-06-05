@@ -1,8 +1,12 @@
 import React, { useState } from "react";
 import "./Home.css";
 
+const radiusOptions = [5, 10, 15, 25, 50];
+const defaultRadiusIndex = 2;
+
 export default function SearchPanel() {
-  const [radius, setRadius] = useState(15);
+  const [radiusIndex, setRadiusIndex] = useState(defaultRadiusIndex);
+  const radius = radiusOptions[radiusIndex];
 
   return (
     <section className="hero-card" aria-labelledby="home-title" id="start">
@@ -34,19 +38,17 @@ export default function SearchPanel() {
           id="radius"
           className="radius-slider"
           type="range"
-          min="1"
-          max="50"
-          value={radius}
-          onChange={(event) => setRadius(Number(event.target.value))}
+          min="0"
+          max={radiusOptions.length - 1}
+          step="1"
+          value={radiusIndex}
+          onChange={(event) => setRadiusIndex(Number(event.target.value))}
         />
 
         <div className="hero-actions">
           <button className="button button--dark" type="button">
             Start search
           </button>
-          <a className="button button--light" href="#preview">
-            View demo
-          </a>
         </div>
       </form>
     </section>

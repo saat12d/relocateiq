@@ -173,8 +173,11 @@
 
 .hero-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  justify-items: center;
+}
+
+.hero-actions .button {
+  width: min(100%, 260px);
 }
 
 .ranking-card {
