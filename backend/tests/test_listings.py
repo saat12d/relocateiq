@@ -113,6 +113,35 @@ def test_static_provider_unknown_zone_returns_empty_list():
     """The static provider returns an empty list for a zone with no entry."""
     provider = StaticListingProvider()
     assert provider.get_listings("not-a-real-zone") == []
+
+
+def test_static_provider_returns_three_listings_per_known_zone():
+    """Each neighborhood in the static data has three demo listings."""
+    provider = StaticListingProvider()
+    for zone_id in (
+        "westwood",
+        "santa-monica",
+        "venice",
+        "culver-city",
+        "mar-vista",
+        "playa-vista",
+        "west-la",
+        "brentwood",
+        "beverly-hills",
+        "west-hollywood",
+        "hollywood",
+        "los-feliz",
+        "silver-lake",
+        "echo-park",
+        "downtown-la",
+        "koreatown",
+        "mid-city",
+        "miracle-mile",
+        "pasadena",
+        "long-beach-downtown",
+    ):
+        listings = provider.get_listings(zone_id)
+        assert len(listings) == 3, f"expected 3 listings for {zone_id}, got {len(listings)}"
 # [GenAI Use] LLM Response End
 
 # [GenAI Use] Reflection: These tests were easier to write than the scenario
