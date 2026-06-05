@@ -100,7 +100,6 @@ function ScenarioCard({ scenario }: { scenario: CommuteScenario }) {
             <p>{formatDate(scenario.createdAt)}</p>
             <h2>{scenario.workplace.address}</h2>
           </div>
-          <button type="button" aria-label="Scenario actions">...</button>
         </div>
 
         <div className="scenario-card__summary">
@@ -138,6 +137,7 @@ function ScenarioCard({ scenario }: { scenario: CommuteScenario }) {
 
 function SavedScenariosPage() {
   const [query, setQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"recent" | "radius" | "drive">("recent");
   const [scenarios, setScenarios] = useState<CommuteScenario[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
@@ -162,19 +162,38 @@ function SavedScenariosPage() {
     };
   }, []);
 
-  const filteredScenarios = useMemo(() => {
+  const visibleScenarios = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return scenarios;
-    return scenarios.filter((scenario) =>
-      [
-        scenario.workplace.address,
-        scenario.recommendations[0]?.zone.name ?? "",
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalizedQuery),
-    );
-  }, [query, scenarios]);
+    const filteredScenarios = normalizedQuery
+      ? scenarios.filter((scenario) =>
+          [
+            scenario.workplace.address,
+            scenario.recommendations[0]?.zone.name ?? "",
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(normalizedQuery),
+        )
+      : scenarios;
+
+    return [...filteredScenarios].sort((a, b) => {
+      if (sortBy === "radius") {
+        return b.searchRadiusMiles - a.searchRadiusMiles;
+      }
+      if (sortBy === "drive") {
+        const aDrive =
+          a.recommendations[0]?.commuteAnalysis.driveTimePeakMinutes ??
+          Number.POSITIVE_INFINITY;
+        const bDrive =
+          b.recommendations[0]?.commuteAnalysis.driveTimePeakMinutes ??
+          Number.POSITIVE_INFINITY;
+        return aDrive - bDrive;
+      }
+      return (
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    });
+  }, [query, scenarios, sortBy]);
 
   return (
     <main className="saved-scenarios-page">
@@ -199,7 +218,13 @@ function SavedScenariosPage() {
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Workplace or neighborhood"
         />
-        <select defaultValue="recent" aria-label="Sort scenarios">
+        <select
+          value={sortBy}
+          onChange={(event) =>
+            setSortBy(event.target.value as "recent" | "radius" | "drive")
+          }
+          aria-label="Sort scenarios"
+        >
           <option value="recent">Most recent</option>
           <option value="radius">Radius</option>
           <option value="drive">Shortest drive</option>
@@ -216,9 +241,9 @@ function SavedScenariosPage() {
           <h2>Unable to load saved scenarios</h2>
           <p>Please try refreshing the page.</p>
         </section>
-      ) : filteredScenarios.length > 0 ? (
+      ) : visibleScenarios.length > 0 ? (
         <section className="scenario-grid" aria-label="Saved scenarios">
-          {filteredScenarios.map((scenario) => (
+          {visibleScenarios.map((scenario) => (
             <ScenarioCard key={scenario.scenarioId} scenario={scenario} />
           ))}
         </section>

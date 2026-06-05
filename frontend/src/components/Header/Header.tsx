@@ -20,11 +20,6 @@ export default function Header() {
   return (
     <header className="site-header">
       <Logo />
-      <nav className="site-nav" aria-label="Primary navigation">
-        <a href="#how-it-works">How it works</a>
-        <a href="#preview">Preview</a>
-        <a href="#start">Start search</a>
-      </nav>
       <div className="site-actions">
         {isLoading ? (
           <span className="site-session-loading" aria-live="polite">

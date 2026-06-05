@@ -67,17 +67,6 @@ export default function Topbar({
           ))}
         </select>
       </div>
-      <div className="mode-toggle" aria-label="Commute mode">
-        <button className="is-active" type="button">
-          Drive
-        </button>
-        <button type="button">Transit</button>
-      </div>
-      <label className="traffic-toggle">
-        <input type="checkbox" defaultChecked readOnly />
-        <span />
-        Live traffic
-      </label>
       <div className="dashboard-session" aria-label="Account">
         {user && (
           <span className="dashboard-user-label" title={user.email}>

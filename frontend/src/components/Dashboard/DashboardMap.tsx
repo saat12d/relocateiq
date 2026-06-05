@@ -154,12 +154,18 @@ type MapChromeProps = {
   departureMinutes: number;
   onDepartureCommit: (minutes: number) => void;
   isLoading: boolean;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onResetMap: () => void;
 };
 
 function MapChrome({
   departureMinutes,
   onDepartureCommit,
   isLoading,
+  onZoomIn,
+  onZoomOut,
+  onResetMap,
 }: MapChromeProps) {
   // Track the slider value locally so the label updates live while dragging;
   // only re-run the search when the user releases (commits) the slider.
@@ -179,13 +185,13 @@ function MapChrome({
   return (
     <>
       <div className="map-controls" aria-label="Map controls">
-        <button type="button" aria-label="Zoom in">
+        <button type="button" aria-label="Zoom in" onClick={onZoomIn}>
           +
         </button>
-        <button type="button" aria-label="Zoom out">
+        <button type="button" aria-label="Zoom out" onClick={onZoomOut}>
           -
         </button>
-        <button type="button" aria-label="Reset map">
+        <button type="button" aria-label="Reset map" onClick={onResetMap}>
           ⌖
         </button>
       </div>
@@ -246,6 +252,11 @@ export default function DashboardMap({
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapboxMap | null>(null);
   const [failed, setFailed] = useState(false);
+  const resetView = {
+    center: [workplace.longitude, workplace.latitude] as [number, number],
+    zoom: 11.15,
+    bearing: -7,
+  };
 
   // Rebuild map data whenever the API data or selection changes
   const mapData = useMemo(
@@ -435,6 +446,9 @@ export default function DashboardMap({
         departureMinutes={departureMinutes}
         onDepartureCommit={onDepartureCommit}
         isLoading={isLoading}
+        onZoomIn={() => mapRef.current?.zoomIn()}
+        onZoomOut={() => mapRef.current?.zoomOut()}
+        onResetMap={() => mapRef.current?.flyTo(resetView)}
       />
     </section>
   );
