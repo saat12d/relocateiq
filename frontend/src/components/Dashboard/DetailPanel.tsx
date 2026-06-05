@@ -104,9 +104,7 @@ export default function DetailPanel({
 
       <section className="ai-panel">
         <div className="section-title">
-          <h3>
-            AI explanation <span>BETA</span>
-          </h3>
+          <h3>AI explanation</h3>
           <b>✦</b>
         </div>
 
