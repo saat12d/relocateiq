@@ -1,4 +1,8 @@
-import React, { useState } from "react";
+// [GenAI Use] Prompt: "How to connect a public React search component to a protected dashboard route, saving the query parameters so they execute after login?"
+// [GenAI Use] LLM Response Start
+
+import React, { ChangeEvent, useState } from "react";
+import { useNavigate, createSearchParams } from "react-router-dom";
 import "./Home.css";
 
 const radiusOptions = [5, 10, 15, 25, 50];
@@ -7,6 +11,22 @@ const defaultRadiusIndex = 2;
 export default function SearchPanel() {
   const [radiusIndex, setRadiusIndex] = useState(defaultRadiusIndex);
   const radius = radiusOptions[radiusIndex];
+
+  const [workplace, setWorkplace] = useState("");
+  const navigate = useNavigate();
+
+  const handleSearchSubmit = (event: ChangeEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!workplace.trim()) return;
+    navigate({
+      pathname: "/dashboard",
+      search: createSearchParams({
+        workplace: workplace.trim(),
+        radius: radius.toString(),
+      }).toString(),
+    });
+  };
 
   return (
     <section className="hero-card" aria-labelledby="home-title" id="start">
@@ -17,7 +37,11 @@ export default function SearchPanel() {
         lifestyle fit before you open a single listing.
       </p>
 
-      <form className="search-form" aria-label="Start a commute search">
+      <form
+        className="search-form"
+        aria-label="Start a commute search"
+        onSubmit={handleSearchSubmit}
+      >
         <label htmlFor="workplace">Workplace address</label>
         <div className="address-field">
           <span aria-hidden="true" className="address-field__icon">
@@ -27,6 +51,7 @@ export default function SearchPanel() {
             id="workplace"
             type="text"
             placeholder="800 Wilshire Blvd, Los Angeles"
+            onChange={(e) => setWorkplace(e.target.value)}
           />
         </div>
 
@@ -46,7 +71,7 @@ export default function SearchPanel() {
         />
 
         <div className="hero-actions">
-          <button className="button button--dark" type="button">
+          <button className="button button--dark" type="submit">
             Start search
           </button>
         </div>
@@ -54,3 +79,9 @@ export default function SearchPanel() {
     </section>
   );
 }
+
+// [GenAI Use] LLM Response End
+
+// [GenAI Use] Reflection: it didn't edit much of the code, it just added a couple of lines,
+// and the handleSearchSubmit function, but it had incorrect typing (for typescript), which
+// i had to fix, since it was using depracated functions.
