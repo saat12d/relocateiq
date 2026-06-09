@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getAuthToken } from "../../lib/auth";
 import "./Home.css";
 
 const radiusOptions = [5, 10, 15, 25, 50];
@@ -6,6 +8,7 @@ const defaultRadiusIndex = 2;
 
 export default function SearchPanel() {
   const [radiusIndex, setRadiusIndex] = useState(defaultRadiusIndex);
+  const navigate = useNavigate();
   const radius = radiusOptions[radiusIndex];
 
   return (
@@ -46,7 +49,11 @@ export default function SearchPanel() {
         />
 
         <div className="hero-actions">
-          <button className="button button--dark" type="button">
+          <button
+            className="button button--dark"
+            type="button"
+            onClick={() => navigate(getAuthToken() ? "/dashboard" : "/login")}
+          >
             Start search
           </button>
         </div>
