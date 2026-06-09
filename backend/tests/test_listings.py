@@ -25,6 +25,7 @@ import pytest
 from app.main import app
 from app.services.listings import (
     ListingProvider,
+    RentCastListingProvider,
     StaticListingProvider,
     get_listing_provider,
 )
@@ -93,10 +94,10 @@ def test_listing_provider_cannot_be_instantiated():
         ListingProvider()
 
 
-def test_get_listing_provider_returns_static_provider():
-    """The factory returns the static provider while no API key is wired."""
+def test_get_listing_provider_returns_rentcast_provider():
+    """The factory returns RentCastListingProvider by default."""
     provider = get_listing_provider()
-    assert isinstance(provider, StaticListingProvider)
+    assert isinstance(provider, RentCastListingProvider)
 
 
 def test_static_provider_returns_typed_listings():

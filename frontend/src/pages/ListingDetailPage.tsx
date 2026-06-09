@@ -103,11 +103,46 @@ function ListingDetailPage() {
                 </div>
               </dl>
 
+              {(listing.listingAgentName ||
+                listing.listingAgentPhone ||
+                listing.listingAgentEmail ||
+                listing.listingOfficeName) && (
+                <section className="listing-detail-contact">
+                  <p className="listing-detail-contact__label">Contact</p>
+                  {listing.listingAgentName && (
+                    <p className="listing-detail-contact__name">
+                      Listed by {listing.listingAgentName}
+                    </p>
+                  )}
+                  {listing.listingOfficeName && (
+                    <p className="listing-detail-contact__office">
+                      {listing.listingOfficeName}
+                    </p>
+                  )}
+                  {listing.listingAgentPhone && (
+                    <a
+                      href={`tel:${listing.listingAgentPhone}`}
+                      className="listing-detail-contact__link"
+                    >
+                      {listing.listingAgentPhone}
+                    </a>
+                  )}
+                  {listing.listingAgentEmail && (
+                    <a
+                      href={`mailto:${listing.listingAgentEmail}`}
+                      className="listing-detail-contact__link"
+                    >
+                      {listing.listingAgentEmail}
+                    </a>
+                  )}
+                </section>
+              )}
+
               <div className="listing-detail-actions">
                 <a
-                  href={listing.url}
+                  href={listing.url || "#"}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="listing-detail-cta"
                 >
                   View on listing site
