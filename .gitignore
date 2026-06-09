@@ -16,6 +16,8 @@ frontend/*.local
 frontend/.env
 frontend/.env.local
 frontend/.env.*.local
+frontend/playwright-report/
+frontend/test-results/
 
 # Logs
 logs
