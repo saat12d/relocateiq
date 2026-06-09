@@ -8,6 +8,7 @@ import HomePage from "./pages/HomePage.tsx";
 import { LoginPage, SignupPage } from "./pages/AuthPages.tsx";
 import DashboardPage from "./pages/DashboardPage.tsx";
 import SavedScenariosPage from "./pages/SavedScenariosPage.tsx";
+import ListingDetailPage from "./pages/ListingDetailPage.tsx";
 
 import Header from "./components/Header/Header.tsx";
 import ComparisonPage from "./pages/ComparisonPage.tsx";
@@ -27,6 +28,10 @@ function AppShell() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/scenarios" element={<SavedScenariosPage />} />
         <Route path="/compare" element={<ComparisonPage />} />
+        <Route
+          path="/zones/:zoneId/listings/:listingId"
+          element={<ListingDetailPage />}
+        />
       </Routes>
     </>
   );
