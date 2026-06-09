@@ -135,4 +135,8 @@ class HousingListing(BaseModel):
     bedrooms: int
     bathrooms:int
     url:str
+    listing_agent_name: str | None = Field(default=None, alias="listingAgentName")
+    listing_agent_phone: str | None = Field(default=None, alias="listingAgentPhone")
+    listing_agent_email: str | None = Field(default=None, alias="listingAgentEmail")
+    listing_office_name: str | None = Field(default=None, alias="listingOfficeName")
     
