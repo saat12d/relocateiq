@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import type { CommuteScenario, HousingListing } from "../../models/types";
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
@@ -144,14 +145,12 @@ export default function DetailPanel({
                   {listing.bedrooms} bed • {listing.bathrooms} bath
                 </p>
                 <p>{listing.address}</p>
-                <a
-                  href={listing.url}
-                  target="_blank"
-                  rel="noreferrer"
+                <Link
+                  to={`/zones/${selected.zone.zoneId}/listings/${listing.listingId}`}
                   className="listing-link"
                 >
                   View Details
-                </a>
+                </Link>
               </article>
             ))
           ) : (

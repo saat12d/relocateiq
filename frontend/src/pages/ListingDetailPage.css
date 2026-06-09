@@ -1,0 +1,123 @@
+.listing-detail-page {
+  min-height: 100vh;
+  background: var(--canvas);
+  color: var(--ink);
+  padding: 40px 24px;
+}
+
+.listing-detail-shell {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.listing-detail-back {
+  display: inline-block;
+  margin-bottom: 24px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+.listing-detail-back:hover { color: var(--ink); }
+
+.listing-detail-state {
+  padding: 40px 0;
+  text-align: center;
+}
+.listing-detail-state h2 { margin: 0 0 8px; font-size: 18px; font-weight: 900; }
+.listing-detail-state p { margin: 0; color: var(--muted); font-size: 13px; font-weight: 700; }
+
+.listing-detail-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 252, 246, 0.92);
+}
+
+.listing-detail-photo {
+  height: 220px;
+  background: linear-gradient(145deg, #a4bc96, #f3e8d2);
+}
+
+.listing-detail-body {
+  padding: 24px;
+}
+
+.listing-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.listing-detail-address {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--ink);
+}
+
+.listing-detail-price {
+  flex: 0 0 auto;
+  text-align: right;
+}
+.listing-detail-price strong {
+  display: block;
+  font-size: 22px;
+  font-weight: 900;
+}
+.listing-detail-price small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.listing-detail-facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 0 0 24px;
+  padding: 0;
+}
+.listing-detail-facts div {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 253, 248, 0.8);
+}
+.listing-detail-facts dt {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+.listing-detail-facts dd {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.listing-detail-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.listing-detail-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 20px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #2c241f, #17120f);
+  color: #fffdf8;
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+.listing-detail-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(55, 39, 20, 0.12);
+}
