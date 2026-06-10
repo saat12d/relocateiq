@@ -32,6 +32,12 @@ type ListingsStatus = "idle" | "loading" | "error";
 
 const ACTIVE_SCENARIO_KEY = "relocateiq.activeScenarioId";
 
+// [GenAI Use] Prompt: "Role: senior React engineer. 
+// Context: Dashboard recommendations can change after loading a scenario, applying filters, 
+// or AI re-ranking. Task: write a helper that preserves the selected zone 
+// when it still exists, otherwise falls back to the top-ranked recommendation.
+//  Criteria: keep selection stable and avoid null UI when recommendations reorder."
+// [GenAI Use] LLM Response Start
 function pickSelectedZoneId(
   recommendations: CommuteScenario["recommendations"],
   currentId: string | null,
@@ -46,6 +52,9 @@ function pickSelectedZoneId(
     recommendations.find((rec) => rec.rank === 1) ?? recommendations[0];
   return topRanked?.zone.zoneId ?? null;
 }
+// [GenAI Use] LLM Response End
+// [GenAI Use] Reflection: We kept this helper because it made dashboard selection behavior predictable 
+// across search, saved-scenario loading, filter updates, and AI refinement.
 
 function DashboardPage() {
   const [searchParams] = useSearchParams();
@@ -293,6 +302,12 @@ function DashboardPage() {
     };
   }, [runExplain, searchParams]);
 
+  // [GenAI Use] Prompt: "Role: React frontend engineer. 
+  // Context: The dashboard detail panel should show listings for the selected zone. 
+  // Task: lazily fetch listings when selectedZoneId changes and cache results by zone id. 
+  // Criteria: avoid duplicate fetches, expose loading/error states, 
+  // and cancel stale async updates when selection changes."
+  // [GenAI Use] LLM Response Start
   useEffect(() => {
     const zoneId = selectedZoneId;
     if (!zoneId || listingsByZone[zoneId]) {
@@ -322,6 +337,10 @@ function DashboardPage() {
       cancelled = true;
     };
   }, [selectedZoneId, listingsByZone]);
+  // [GenAI Use] LLM Response End
+  // [GenAI Use] Reflection: We kept the lazy/cache pattern and manually 
+  // connected it to DetailPanel's listingsStatus so the UI can show loading/error/
+  // empty/populated listing states
 
   return (
     <main className="dashboard-page">
