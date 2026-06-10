@@ -171,12 +171,20 @@ function ComparisonPage() {
             <tr>
               <td></td>
               <td>
-                <button className="explore-listings-btn" disabled={!zoneA}>
+                <button
+                  className="explore-listings-btn"
+                  disabled={!zoneA}
+                  onClick={() => navigate(`/zones/${zoneA!.zone.zoneId}/listings`, { state: { scenarioId } })}
+                >
                   Explore Listings
                 </button>
               </td>
               <td>
-                <button className="explore-listings-btn" disabled={!zoneB}>
+                <button
+                  className="explore-listings-btn"
+                  disabled={!zoneB}
+                  onClick={() => navigate(`/zones/${zoneB!.zone.zoneId}/listings`, { state: { scenarioId } })}
+                >
                   Explore Listings
                 </button>
               </td>
