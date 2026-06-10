@@ -15,6 +15,13 @@ function ListingDetailPage() {
     "loading" | "ready" | "error" | "not-found"
   >("loading");
 
+  // [GenAI Use] Prompt: "Role: React frontend engineer. 
+  // Context: Listing cards link to /zones/:zoneId/listings/:listingId. 
+  // Task: load listing detail from route params by fetching listings for the zone, 
+  // finding the selected listing, and rendering loading, error, not-found, and ready states. 
+  // Criteria: preserve auth protection, avoid a live listing provider in the component, 
+  // and display RentCast contact fields when present."
+  // [GenAI Use] LLM Response Start
   useEffect(() => {
     if (!zoneId || !listingId) {
       setStatus("not-found");
@@ -151,6 +158,10 @@ function ListingDetailPage() {
             </div>
           </article>
         )}
+        {/* [GenAI Use] LLM Response End */}
+        {/* [GenAI Use] Reflection: We kept the route-param lookup and state handling, 
+        then manually aligned it with fetchZoneListings, the auth wrapper, and the final HousingListing 
+        fields added for agent contact info. */}
       </div>
     </main>
   );

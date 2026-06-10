@@ -7,6 +7,12 @@ import RankingPanel from "../components/Home/RankingPanel";
 import FeatureBar from "../components/Home/FeatureBar";
 // import "../components/Auth/Auth.css";
 
+// [GenAI Use] Prompt: "Role: product-minded frontend engineer. 
+// Context: RelocateIQ needs homepage content that explains commute-first relocation without becoming a generic marketing page. 
+// Task: draft concise homepage sections explaining the problem, RelocateIQ's value, and the three-step workflow.
+//  Criteria: match the design doc, keep copy focused on workplace search, ranked neighborhoods,
+//  AI refinement, and listings."
+// [GenAI Use] LLM Response Start
 const howItWorksSteps = [
   {
     n: 1,
@@ -103,6 +109,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      {/* [GenAI Use] LLM Response End */}
 
       {/* Section 8: Footer */}
       <footer className="site-footer">
@@ -139,3 +146,6 @@ export default function HomePage() {
     </main>
   );
 }
+// [GenAI Use] Reflection: We revised the generated layout to fit the current app, 
+// kept the first viewport focused on the product search/map, 
+// and avoided adding (or removed) inactive homepage controls.

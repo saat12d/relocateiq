@@ -41,6 +41,13 @@ function getPreviewZones(scenario: CommuteScenario): SavedScenarioZone[] {
   }));
 }
 
+// [GenAI Use] Prompt: "Role: senior React frontend engineer. 
+// Context: RelocateIQ users can save commute scenarios and reopen them later. 
+// Task: create reusable saved-scenario card UI with a compact mini-map preview, top neighborhood summary, 
+// radius/area metadata, commute metrics, and a dashboard reopen link. 
+// Criteria: match the existing RelocateIQ visual style, keep the components data-driven 
+// from CommuteScenario, and avoid adding new API behavior inside the card components."
+// [GenAI Use] LLM Response Start
 function MiniScenarioMap({ scenario }: { scenario: CommuteScenario }) {
   const zones = getPreviewZones(scenario);
   const topZone = zones[0] ?? { x: 64, y: 34 };
@@ -134,6 +141,9 @@ function ScenarioCard({ scenario }: { scenario: CommuteScenario }) {
     </article>
   );
 }
+// [GenAI Use] LLM Response End
+// [GenAI Use] Reflection: We kept the mini-map/card concept, then manually wired the page around it to 
+// fetchSavedScenarios, auth protection, search/sort state, and /dashboard?scenarioId reopening.
 
 function SavedScenariosPage() {
   const [query, setQuery] = useState("");
