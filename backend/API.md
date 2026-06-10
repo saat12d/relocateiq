@@ -1,10 +1,7 @@
 # RelocateIQ Backend — API Documentation
 
-**Team:** RelocateIQ (CS 130, Spring 2026)  
-**Base URL (local dev):** `http://localhost:8000`  
-**Interactive docs:** `http://localhost:8000/docs` (Swagger UI, useful for trying endpoints)
 
-This document describes every REST endpoint exposed by the RelocateIQ backend. It follows the same structure we used in the design doc — each endpoint gets **Semantics**, **Params**, **Pre-conditions**, **Post-conditions**, and **Errors** — so TAs (and future teammates) can read one section and understand what the call is supposed to do without digging through router code.
+This document describes every REST endpoint exposed by the RelocateIQ backend. It follows the same structure we used in the design doc - each endpoint gets **Semantics**, **Params**, **Pre-conditions**, **Post-conditions**, and **Errors** — so TAs (and teammates) can read one section and understand what the call is supposed to do without digging through router code.
 
 ---
 
@@ -631,11 +628,3 @@ A few things evolved during implementation:
 - **Listings provider** — We use RentCast (with a static JSON fallback) instead of Zillow, behind a swappable `ListingProvider` interface as planned.
 - **Max commute slider** — API accepts 5–120 minutes (design doc said 5–60); the frontend slider can be tightened without backend changes.
 - **Per-listing commute** — Not yet on the listings response; zone-level commute lives on each `Recommendation`.
-
-For setup, migrations, and running tests, see [README.md](README.md).
-
----
-
-## Verification note
-
-This document was cross-referenced against the live FastAPI route table (`app/main.py` and `app/routers/*`) on 2026-06-10. The application exposes **15 product endpoints** (plus auto-generated `/docs`, `/redoc`, and `/openapi.json` from FastAPI itself). Every path, method, auth requirement, and status code above matches the current implementation.
