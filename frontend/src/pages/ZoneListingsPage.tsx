@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import type { HousingListing } from "../models/types";
 import { fetchZoneListings } from "../services/scenario";
 import { withRequirements, userSignedInRequirement } from "../lib/Requirements";
@@ -8,6 +8,12 @@ import "./ZoneListingsPage.css";
 
 function ZoneListingsPage() {
   const { zoneId } = useParams<{ zoneId: string }>();
+  const location = useLocation();
+  const scenarioId = (location.state as { scenarioId?: string } | null)
+    ?.scenarioId;
+  const backTo = scenarioId ? `/compare?scenarioId=${scenarioId}` : "/dashboard";
+  // Fixed this to go back to the comparison, since it now has the scenarioID
+  const backLabel = scenarioId ? "← Back to comparison" : "← Back to dashboard";
   const [listings, setListings] = useState<HousingListing[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -42,8 +48,8 @@ function ZoneListingsPage() {
   return (
     <main className="zone-listings-page">
       <div className="zone-listings-shell">
-        <Link className="listing-detail-back" to="/dashboard">
-          ← Back to dashboard
+        <Link className="listing-detail-back" to={backTo}>
+          {backLabel}
         </Link>
 
         {status === "loading" && (
@@ -71,8 +77,8 @@ function ZoneListingsPage() {
 
             {listings.length === 0 ? (
               <section className="listing-detail-state">
-                <h2>No listings found</h2>
-                <p>There are no listings available for this zone right now.</p>
+                <h2>No listings available</h2>
+                <p>No listings available for this neighborhood yet.</p>
               </section>
             ) : (
               <div className="zone-listings-grid">

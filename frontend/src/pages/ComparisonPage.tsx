@@ -174,7 +174,7 @@ function ComparisonPage() {
                 <button
                   className="explore-listings-btn"
                   disabled={!zoneA}
-                  onClick={() => navigate(`/zones/${zoneA!.zone.zoneId}/listings`)}
+                  onClick={() => navigate(`/zones/${zoneA!.zone.zoneId}/listings`, { state: { scenarioId } })}
                 >
                   Explore Listings
                 </button>
@@ -183,7 +183,7 @@ function ComparisonPage() {
                 <button
                   className="explore-listings-btn"
                   disabled={!zoneB}
-                  onClick={() => navigate(`/zones/${zoneB!.zone.zoneId}/listings`)}
+                  onClick={() => navigate(`/zones/${zoneB!.zone.zoneId}/listings`, { state: { scenarioId } })}
                 >
                   Explore Listings
                 </button>
