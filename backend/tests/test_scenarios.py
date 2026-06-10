@@ -5,7 +5,6 @@ import respx
 from app.main import app
 from app.services.geocoding import GEOCODING_URL
 from app.services.google_maps import DISTANCE_MATRIX_URL
-
 # AI generated tests for scenario API. Prompt - "Generate tests for the scenario API endpoints, based on the design document."
 
 @pytest.fixture(autouse=True)

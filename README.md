@@ -125,8 +125,8 @@ Then open `.env` and fill in:
   python -c "import secrets; print(secrets.token_urlsafe(32))"
   ```
   The backend will refuse to start without it.
-- **API keys** (`OPENAI_API_KEY`, `GOOGLE_MAPS_API_KEY`, `TOMTOM_API_KEY`,
-  `ZILLOW_API_KEY`) — needed for the recommendation/listings features. Get
+- **API keys** (`OPENAI_API_KEY`, `GOOGLE_MAPS_API_KEY`, `WALKSCORE_API_KEY`,
+  `RENTCAST_API_KEY`) — needed for the recommendation/listings features. Get
   the shared dev keys from a teammate (shared privately — never committed).
   Auth and the basic app run without them; the external-data features won't.
 
@@ -201,6 +201,14 @@ pytest tests/test_scenarios.py -v   # scenario tests only
 Test configuration lives in `backend/pytest.ini` (test paths, async mode, and
 the Python path are all set there — no extra setup needed).
 
+### Regenerating lifestyle data
+
+Lifestyle scores in `backend/app/data/lifestyle.json` combine Walk Score
+(walkability) and Google Places (grocery/park) with hand-researched nightlife
+and quietness (see `backend/scripts/generate_lifestyle.py`). The running app
+reads that JSON at startup. Commute routing remains live; lifestyle scores are
+precomputed per zone. Restart the backend after regenerating lifestyle data.
+
 ---
 
 ## Tech Stack
@@ -211,5 +219,6 @@ the Python path are all set there — no extra setup needed).
 - **Auth:** bcrypt password hashing, JWT bearer tokens (python-jose)
 - **Testing:** pytest, pytest-asyncio, httpx (ASGI transport), in-memory
   SQLite for isolated auth tests
-- **External services:** Google Maps (geocoding/routing), TomTom (traffic),
-  Zillow (listings), OpenAI (AI preference refinement)
+- **External services:** Google Maps (geocoding/routing; Places for grocery/park
+  in offline lifestyle generation), Walk Score (walkability), RentCast
+  (listings), OpenAI (AI preference refinement)

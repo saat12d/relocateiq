@@ -56,25 +56,60 @@ def test_google_distance_matrix() -> bool:
     return ok
 
 
-# ── 3. TomTom Routing API ─────────────────────────────────────────────────────
-def test_tomtom() -> bool:
-    key = os.getenv("TOMTOM_API_KEY", "")
+# ── 3. Walk Score API ─────────────────────────────────────────────────────────
+def test_walkscore() -> bool:
+    key = os.getenv("WALKSCORE_API_KEY", "")
     if not key or key.startswith("your_"):
-        result("TomTom Routing", False, "key not set")
+        result("Walk Score", False, "key not set")
         return False
-    # Simple routing request: UCLA → Santa Monica
-    url = (
-        "https://api.tomtom.com/routing/1/calculateRoute"
-        "/34.0689,-118.4452:34.0195,-118.4912/json"
+    r = httpx.get(
+        "https://api.walkscore.com/score",
+        params={
+            "format": "json",
+            "lat": 34.0689,
+            "lon": -118.4452,
+            "address": "UCLA, Los Angeles, CA",
+            "wsapikey": key,
+        },
+        timeout=10,
     )
-    r = httpx.get(url, params={"key": key, "travelMode": "car"}, timeout=10)
-    ok = r.status_code == 200 and "routes" in r.json()
-    detail = str(r.status_code) if not ok else f"{len(r.json()['routes'])} route(s) returned"
-    result("TomTom Routing", ok, detail)
+    data = r.json() if r.status_code == 200 else {}
+    ok = r.status_code == 200 and data.get("status") == 1
+    detail = f"walkscore={data.get('walkscore')}" if ok else str(data.get("status", r.status_code))
+    result("Walk Score", ok, detail)
     return ok
 
 
-# ── 4. OpenAI Chat API ────────────────────────────────────────────────────────
+# ── 4. Google Places API (New) ────────────────────────────────────────────────
+def test_google_places() -> bool:
+    key = os.getenv("GOOGLE_MAPS_API_KEY", "")
+    if not key or key.startswith("your_"):
+        result("Google Places", False, "key not set")
+        return False
+    r = httpx.post(
+        "https://places.googleapis.com/v1/places:searchNearby",
+        json={
+            "includedTypes": ["supermarket"],
+            "maxResultCount": 1,
+            "locationRestriction": {
+                "circle": {
+                    "center": {"latitude": 34.0689, "longitude": -118.4452},
+                    "radius": 500.0,
+                }
+            },
+        },
+        headers={
+            "X-Goog-Api-Key": key,
+            "X-Goog-FieldMask": "places.displayName",
+        },
+        timeout=10,
+    )
+    ok = r.status_code == 200
+    result("Google Places (New)", ok, f"HTTP {r.status_code}")
+    return ok
+
+
+# ── 5. OpenAI Chat API ────────────────────────────────────────────────────────
 def test_openai() -> bool:
     key = os.getenv("OPENAI_API_KEY", "")
     if not key or key.startswith("your_"):
@@ -97,7 +132,7 @@ def test_openai() -> bool:
         return False
 
 
-# ── 5. RentCast Housing API ───────────────────────────────────────────────────
+# ── 6. RentCast Housing API ───────────────────────────────────────────────────
 def test_housing_api() -> bool:
     key = os.getenv("RENTCAST_API_KEY", "")
     if not key or key.startswith("your_"):
@@ -122,7 +157,7 @@ def test_housing_api() -> bool:
         return False
 
 
-# ── 6. Mapbox Styles API ──────────────────────────────────────────────────────
+# ── 7. Mapbox Styles API ──────────────────────────────────────────────────────
 def test_mapbox() -> bool:
     token = os.getenv("MAPBOX_TOKEN", "")
     if not token or token.startswith("your_"):
@@ -136,7 +171,7 @@ def test_mapbox() -> bool:
     return ok
 
 
-# ── 7. PostgreSQL ─────────────────────────────────────────────────────────────
+# ── 8. PostgreSQL ─────────────────────────────────────────────────────────────
 def test_postgres() -> bool:
     db_url = os.getenv("DATABASE_URL", "")
     if not db_url or "user:password" in db_url:
@@ -155,8 +190,8 @@ def test_postgres() -> bool:
 
 # ── Runner ────────────────────────────────────────────────────────────────────
 TESTS = [
-    ("Google Maps Platform", [test_google_maps, test_google_distance_matrix]),
-    ("TomTom",               [test_tomtom]),
+    ("Google Maps Platform", [test_google_maps, test_google_distance_matrix, test_google_places]),
+    ("Walk Score",           [test_walkscore]),
     ("OpenAI",               [test_openai]),
     ("Housing (RentCast)",   [test_housing_api]),
     ("Mapbox",               [test_mapbox]),

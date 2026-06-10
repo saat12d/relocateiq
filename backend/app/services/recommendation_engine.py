@@ -7,7 +7,8 @@ from app.schemas.scenario import (
     Recommendation,
 )
 from app.services.google_maps import GoogleMapsError, get_drive_time, get_transit_time
-from app.services.zones import get_lifestyle_analysis, to_zone_model
+from app.services.lifestyle import get_lifestyle_provider
+from app.services.zones import to_zone_model
 
 
 class RecommendationEngineError(Exception):
@@ -80,16 +81,27 @@ def _total_score(commute: CommuteAnalysis, lifestyle, preferences: PreferencePro
     )
 
 
-async def _build_recommendation(raw_zone: dict, destination: str, departure_time: int, preferences: PreferenceProfile) -> Recommendation:
+def _zone_address(raw_zone: dict) -> str:
+    return f"{raw_zone['name']}, {raw_zone['city']}, {raw_zone['state']}"
+
+
+async def _build_recommendation(
+    raw_zone: dict,
+    destination: str,
+    departure_time: int,
+    preferences: PreferenceProfile,
+    lifestyle_provider,
+) -> Recommendation:
     center = raw_zone["center"]
     origin = f"{center['lat']},{center['lng']}"
 
-    # Fetch the normal drive, the no-highway drive, and transit in parallel so the
-    # avoid-highways filter can switch between drive times later without a new call.
-    drive_data, no_highway_data, transit_data = await asyncio.gather(
+    drive_data, no_highway_data, transit_data, lifestyle = await asyncio.gather(
         get_drive_time(origin=origin, destination=destination, departure_time=departure_time),
         get_drive_time(origin=origin, destination=destination, departure_time=departure_time, avoid="highways"),
         get_transit_time(origin=origin, destination=destination, departure_time=departure_time),
+        lifestyle_provider.get_scores(
+            raw_zone["id"], center["lat"], center["lng"], _zone_address(raw_zone)
+        ),
     )
 
     traffic_seconds = drive_data["duration_in_traffic_seconds"] or drive_data["duration_seconds"]
@@ -107,7 +119,6 @@ async def _build_recommendation(raw_zone: dict, destination: str, departure_time
         transfer_count=1,
         congestion_level=round(congestion_level, 2),
     )
-    lifestyle = get_lifestyle_analysis(raw_zone["id"])
     total = _total_score(commute, lifestyle, preferences)
 
     return Recommendation(
@@ -190,6 +201,7 @@ async def analyze_zones(
             hour=departure_time_minutes // 60,
             minute=departure_time_minutes % 60,
         )
+    lifestyle_provider = get_lifestyle_provider()
     try:
         recommendations = await asyncio.gather(
             *[
@@ -198,6 +210,7 @@ async def analyze_zones(
                     destination=destination,
                     departure_time=departure_time,
                     preferences=preferences,
+                    lifestyle_provider=lifestyle_provider,
                 )
                 for zone in raw_zones
             ]

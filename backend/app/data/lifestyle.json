@@ -1,22 +1,142 @@
 {
-  "westwood": { "walkabilityScore": 86, "groceryScore": 78, "parkScore": 67, "nightlifeScore": 64, "quietnessScore": 54 },
-  "santa-monica": { "walkabilityScore": 90, "groceryScore": 82, "parkScore": 79, "nightlifeScore": 80, "quietnessScore": 42 },
-  "venice": { "walkabilityScore": 84, "groceryScore": 74, "parkScore": 71, "nightlifeScore": 78, "quietnessScore": 39 },
-  "culver-city": { "walkabilityScore": 79, "groceryScore": 76, "parkScore": 66, "nightlifeScore": 68, "quietnessScore": 57 },
-  "mar-vista": { "walkabilityScore": 70, "groceryScore": 72, "parkScore": 63, "nightlifeScore": 51, "quietnessScore": 69 },
-  "playa-vista": { "walkabilityScore": 72, "groceryScore": 70, "parkScore": 68, "nightlifeScore": 49, "quietnessScore": 71 },
-  "west-la": { "walkabilityScore": 75, "groceryScore": 73, "parkScore": 58, "nightlifeScore": 56, "quietnessScore": 62 },
-  "brentwood": { "walkabilityScore": 74, "groceryScore": 79, "parkScore": 72, "nightlifeScore": 52, "quietnessScore": 76 },
-  "beverly-hills": { "walkabilityScore": 71, "groceryScore": 80, "parkScore": 65, "nightlifeScore": 59, "quietnessScore": 74 },
-  "west-hollywood": { "walkabilityScore": 91, "groceryScore": 77, "parkScore": 54, "nightlifeScore": 88, "quietnessScore": 34 },
-  "hollywood": { "walkabilityScore": 82, "groceryScore": 70, "parkScore": 49, "nightlifeScore": 75, "quietnessScore": 31 },
-  "los-feliz": { "walkabilityScore": 78, "groceryScore": 74, "parkScore": 81, "nightlifeScore": 62, "quietnessScore": 65 },
-  "silver-lake": { "walkabilityScore": 80, "groceryScore": 73, "parkScore": 64, "nightlifeScore": 72, "quietnessScore": 52 },
-  "echo-park": { "walkabilityScore": 77, "groceryScore": 69, "parkScore": 60, "nightlifeScore": 70, "quietnessScore": 46 },
-  "downtown-la": { "walkabilityScore": 88, "groceryScore": 68, "parkScore": 45, "nightlifeScore": 84, "quietnessScore": 27 },
-  "koreatown": { "walkabilityScore": 89, "groceryScore": 79, "parkScore": 40, "nightlifeScore": 76, "quietnessScore": 29 },
-  "mid-city": { "walkabilityScore": 68, "groceryScore": 66, "parkScore": 52, "nightlifeScore": 50, "quietnessScore": 60 },
-  "miracle-mile": { "walkabilityScore": 76, "groceryScore": 75, "parkScore": 56, "nightlifeScore": 58, "quietnessScore": 55 },
-  "pasadena": { "walkabilityScore": 73, "groceryScore": 74, "parkScore": 78, "nightlifeScore": 57, "quietnessScore": 72 },
-  "long-beach-downtown": { "walkabilityScore": 74, "groceryScore": 68, "parkScore": 61, "nightlifeScore": 67, "quietnessScore": 47 }
+  "westwood": {
+    "walkabilityScore": 94,
+    "groceryScore": 70,
+    "parkScore": 57,
+    "nightlifeScore": 64,
+    "quietnessScore": 54
+  },
+  "santa-monica": {
+    "walkabilityScore": 92,
+    "groceryScore": 66,
+    "parkScore": 66,
+    "nightlifeScore": 80,
+    "quietnessScore": 42
+  },
+  "venice": {
+    "walkabilityScore": 96,
+    "groceryScore": 87,
+    "parkScore": 82,
+    "nightlifeScore": 78,
+    "quietnessScore": 39
+  },
+  "culver-city": {
+    "walkabilityScore": 96,
+    "groceryScore": 74,
+    "parkScore": 40,
+    "nightlifeScore": 68,
+    "quietnessScore": 57
+  },
+  "mar-vista": {
+    "walkabilityScore": 90,
+    "groceryScore": 44,
+    "parkScore": 19,
+    "nightlifeScore": 51,
+    "quietnessScore": 69
+  },
+  "playa-vista": {
+    "walkabilityScore": 76,
+    "groceryScore": 15,
+    "parkScore": 91,
+    "nightlifeScore": 49,
+    "quietnessScore": 71
+  },
+  "west-la": {
+    "walkabilityScore": 90,
+    "groceryScore": 32,
+    "parkScore": 23,
+    "nightlifeScore": 56,
+    "quietnessScore": 62
+  },
+  "brentwood": {
+    "walkabilityScore": 85,
+    "groceryScore": 57,
+    "parkScore": 15,
+    "nightlifeScore": 52,
+    "quietnessScore": 76
+  },
+  "beverly-hills": {
+    "walkabilityScore": 93,
+    "groceryScore": 53,
+    "parkScore": 95,
+    "nightlifeScore": 59,
+    "quietnessScore": 74
+  },
+  "west-hollywood": {
+    "walkabilityScore": 97,
+    "groceryScore": 91,
+    "parkScore": 61,
+    "nightlifeScore": 88,
+    "quietnessScore": 34
+  },
+  "hollywood": {
+    "walkabilityScore": 95,
+    "groceryScore": 40,
+    "parkScore": 53,
+    "nightlifeScore": 75,
+    "quietnessScore": 31
+  },
+  "los-feliz": {
+    "walkabilityScore": 81,
+    "groceryScore": 28,
+    "parkScore": 28,
+    "nightlifeScore": 62,
+    "quietnessScore": 65
+  },
+  "silver-lake": {
+    "walkabilityScore": 88,
+    "groceryScore": 23,
+    "parkScore": 36,
+    "nightlifeScore": 72,
+    "quietnessScore": 52
+  },
+  "echo-park": {
+    "walkabilityScore": 98,
+    "groceryScore": 82,
+    "parkScore": 70,
+    "nightlifeScore": 70,
+    "quietnessScore": 46
+  },
+  "downtown-la": {
+    "walkabilityScore": 94,
+    "groceryScore": 61,
+    "parkScore": 44,
+    "nightlifeScore": 84,
+    "quietnessScore": 27
+  },
+  "koreatown": {
+    "walkabilityScore": 95,
+    "groceryScore": 95,
+    "parkScore": 49,
+    "nightlifeScore": 76,
+    "quietnessScore": 29
+  },
+  "mid-city": {
+    "walkabilityScore": 92,
+    "groceryScore": 78,
+    "parkScore": 32,
+    "nightlifeScore": 50,
+    "quietnessScore": 60
+  },
+  "miracle-mile": {
+    "walkabilityScore": 94,
+    "groceryScore": 36,
+    "parkScore": 74,
+    "nightlifeScore": 58,
+    "quietnessScore": 55
+  },
+  "pasadena": {
+    "walkabilityScore": 97,
+    "groceryScore": 19,
+    "parkScore": 78,
+    "nightlifeScore": 57,
+    "quietnessScore": 72
+  },
+  "long-beach-downtown": {
+    "walkabilityScore": 97,
+    "groceryScore": 49,
+    "parkScore": 87,
+    "nightlifeScore": 67,
+    "quietnessScore": 47
+  }
 }

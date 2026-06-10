@@ -36,6 +36,25 @@ curl -X POST http://localhost:8000/api/v1/scenarios \
   -d '{"workplaceAddress": "UCLA, Los Angeles, CA", "maxRadiusMiles": 15}'
 ```
 
-Returns `201` with `status: RANKED`, workplace coordinates, and ranked recommendations (commute metrics from Google, lifestyle scores from static JSON).
+Returns `201` with `status: RANKED`, workplace coordinates, and ranked recommendations (commute metrics from Google, lifestyle scores from precomputed JSON).
 
 Errors: `400` bad address, `422` invalid radius or no zones in range, `503` routing API failure.
+
+## Lifestyle data
+
+Lifestyle scores are **precomputed** in `app/data/lifestyle.json`:
+
+- **Walkability** — Walk Score API
+- **Grocery / park** — Google Places API (percentile-ranked across zones)
+- **Nightlife / quietness** — hand-researched values in `lifestyle.json` (preserved when regenerating)
+
+Commute stays live per user workplace; lifestyle is zone-level and does not need
+to be refetched on every search.
+
+Regenerate walk/grocery/park when APIs are configured (Walk Score + Places API New):
+
+```bash
+python scripts/generate_lifestyle.py
+```
+
+Restart the backend after regenerating — `lifestyle.json` is cached in memory.
