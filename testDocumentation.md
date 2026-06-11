@@ -340,6 +340,90 @@ from being sent at all when no token is present.
 
 ---
 
+# Suite 12 — Frontend E2E Tests (Playwright)
+ 
+End-to-end browser tests that launch a real browser, navigate to application
+routes, and assert on visible UI elements. These tests validate things no
+other suite covers: that routing works, that auth guards redirect the browser
+correctly, that protected pages render for authenticated users, and that the
+listing detail page handles all of its states. No live backend is required —
+API responses are intercepted via Playwright's `page.route()`, and a signed-in
+session is simulated by writing a token directly to `localStorage` via
+`page.addInitScript()` before the page loads.
+ 
+---
+ 
+## Setup and teardown
+ 
+**No shared `beforeEach`** — each test is self-contained. Tests that require
+an authenticated user call the shared `mockSignedInUser(page)` helper, which:
+ 
+1. Writes a fake token (`"e2e-test-token"`) to `localStorage` under the key
+   `relocateiq.authToken` before the page loads (via `addInitScript`).
+2. Intercepts `GET /api/v1/auth/me` and returns a mocked `200` response with
+   `{ userId, email, name }` so the app treats the user as signed in.
+Tests that do not call this helper run as anonymous/unauthenticated users.
+ 
+No teardown is needed and each test gets a fresh browser context.
+ 
+---
+ 
+## Sub-group A — Public routes
+ 
+**Files:** `frontend/e2e/` `https://github.com/saat12d/relocateiq/blob/1086a7896d2b26c9da4901be29875865ba6e73ed/frontend/e2e/smoke.spec.ts`
+
+Tests that any visitor can reach without a token.
+ 
+| Test | Scenario | Steps | Expected outcome (oracle) |
+|------|----------|-------|---------------------------|
+| `"homepage renders the landing search experience"` | Homepage loads correctly | `page.goto("/")` | Logo link visible; heading matches `/find the best place to live near your work/i`; `"Workplace address"` label visible; `"Start search"` button visible; `"Top neighborhoods"` text visible |
+| `"login page renders the account form"` | Login page loads correctly | `page.goto("/login")` | Heading matches `/log in to relocateiq/i`; Email and Password labels visible; `"Log in"` button visible |
+| `"signup page renders the registration form"` | Signup page loads correctly | `page.goto("/signup")` | Heading matches `/create your relocateiq account/i`; Name, Email, Password labels visible; `"Create account"` button visible |
+ 
+---
+ 
+## Sub-group B — Protected routes (auth guard)
+**Files:** `frontend/e2e/` `https://github.com/saat12d/relocateiq/blob/1086a7896d2b26c9da4901be29875865ba6e73ed/frontend/e2e/smoke.spec.ts`
+
+Tests that verify unauthenticated users are redirected and authenticated users
+can access protected pages.
+ 
+| Test | Scenario | Steps | Expected outcome (oracle) |
+|------|----------|-------|---------------------------|
+| `"dashboard redirects anonymous users to login"` | Unauthenticated access blocked | `page.goto("/dashboard")` with no token | URL becomes `/login`; login heading visible |
+| `"dashboard renders for an authenticated user"` | Authenticated access granted | `mockSignedInUser` + `page.goto("/dashboard")` | Logo link visible; workplace address placeholder visible; search radius label visible; `"Enter your workplace to start."` prompt visible |
+| `"saved scenarios renders for an authenticated user with no saved scenarios"` | Empty saved-scenarios state | `mockSignedInUser` + mock `GET /api/v1/scenarios` returning `[]` + `page.goto("/scenarios")` | `"Saved scenarios"` heading visible; `"No saved scenarios found"` text visible |
+ 
+---
+
+## Sub-group C — Listing detail page
+**Files:** `https://github.com/saat12d/relocateiq/blob/1086a7896d2b26c9da4901be29875865ba6e73ed/frontend/e2e/listing-detail.spec.ts`
+
+Tests for the `/zones/:zoneId/listings/:listingId` route.
+ 
+The mock listing used across this sub-group:
+```
+listingId:  "listing-abc-123"
+address:    "123 Elm Street, Westwood, CA 90024"
+rent:       2850
+bedrooms:   2
+bathrooms:  1.5
+url:        "https://example.com/listing/abc-123"
+```
+ 
+| Test | Scenario | Steps | Expected outcome (oracle) |
+|------|----------|-------|---------------------------|
+| `"renders all listing fields for an authenticated user"` | Listing detail page shows full listing data | `mockSignedInUser` + mock `GET /api/v1/zones/westwood/listings` returning the mock listing + `page.goto("/zones/westwood/listings/listing-abc-123")` | Address, price (`$2,850`), bedrooms (`2`), bathrooms (`1.5`), `"View on listing site"` link, and `"← Back to dashboard"` link all visible; screenshot saved to `e2e/screenshots/listing-detail.png` |
+| `"redirects unauthenticated users to login"` | Auth guard on listing detail | `page.goto("/zones/westwood/listings/listing-abc-123")` with no token | URL becomes `/login` |
+| `"shows not-found state for unknown listing id"` | Unknown listing ID handled gracefully | `mockSignedInUser` + mock returning the mock listing + `page.goto("/zones/westwood/listings/nonexistent-id")` | `"Listing not found"` text visible |
+ 
+**Edge cases:** unauthenticated access redirects (same guard as dashboard);
+unknown listing ID returns a graceful not-found state rather than crashing;
+the not-found test confirms the app looks up the listing by ID from the zone's
+listing array and handles a miss cleanly.
+
+---
+
 ## Guideline for TAs
 
 **1. How the tests are organized.**
@@ -355,7 +439,7 @@ All backend tests live in `backend/tests/`:
 - `conftest.py` — shared `authenticated_client` fixture (used by
   scenarios + listings suites)
 
-Frontend tests: `frontend/src/lib/auth.test.ts`.
+Frontend tests: `frontend/src/lib/auth.test.ts`, `frontend/e2e/listing-detail.spec.ts`, and `frontend/e2e/smoke.spec.ts`
 
 **2. What they validate.**
 Security and auth (Suites 1–3, 11) cover cryptographic primitives, the full
@@ -364,7 +448,7 @@ core recommendation pipeline (Suites 4–7) covers the Distance Matrix client,
 scoring and re-ranking, AI explanation/refinement, and the end-to-end
 scenario API. Housing listings (Suites 8–10) cover the static and live
 providers, the ListingProvider abstraction, and the listings endpoint
-contract.
+contract. The Playwright E2E suite (Suite 12) validates application-level behavior that no unit or integration test covers including routing, browser-level auth guards, and UI rendering. smoke.spec.ts verifies that all major public and protected routes render correctly and that unauthenticated users are redirected to login. listing-detail.spec.ts verifies that the listing detail page correctly renders listing data, enforces the auth guard, and handles an unknown listing ID gracefully. All backend calls are intercepted via page.route() so no live server is required.
 
 **3. How to install and run them.**
 Backend (from `backend/`, with the virtual environment active and
@@ -383,7 +467,9 @@ an in-memory database so a running Postgres instance is not needed for them.
 Frontend (from `frontend/`):
 ```bash
 npm install
-npm test                  # runs the frontend test suite
+npx playwright install
+npm run test:e2e              # runs playwright tests
+npm run test                  # runs the frontend test suite
 ```
 
 ---

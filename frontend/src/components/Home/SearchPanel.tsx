@@ -23,7 +23,6 @@ export default function SearchPanel() {
   // radius choices and avoids having the continuous radius slider produce unsupported values the dashboard doesn't use.
 
   const [workplace, setWorkplace] = useState("");
-  const navigate = useNavigate();
 
   const handleSearchSubmit = (event: ChangeEvent<HTMLFormElement>) => {
     event.preventDefault();
