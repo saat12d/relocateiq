@@ -171,4 +171,8 @@ export interface HousingListing {
   bedrooms: number;
   bathrooms: number;
   url: string;
+  listingAgentName?: string;
+  listingAgentPhone?: string;
+  listingAgentEmail?: string;
+  listingOfficeName?: string;
 }

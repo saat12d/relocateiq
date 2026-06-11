@@ -3,7 +3,7 @@ import math
 from functools import lru_cache
 from pathlib import Path
 
-from app.schemas.scenario import LifestyleAnalysis, Zone
+from app.schemas.scenario import Zone
 
 NEIGHBORHOODS_PATH = Path(__file__).resolve().parent.parent / "data" / "neighborhoods.json"
 LIFESTYLE_PATH = Path(__file__).resolve().parent.parent / "data" / "lifestyle.json"
@@ -72,16 +72,3 @@ def to_zone_model(raw_zone: dict) -> Zone:
         center_lat=center["lat"],
         center_lng=center["lng"],
     )
-
-
-def get_lifestyle_analysis(zone_id: str) -> LifestyleAnalysis:
-    scores = load_lifestyle_scores().get(zone_id)
-    if scores is None:
-        scores = {
-            "walkabilityScore": 50,
-            "groceryScore": 50,
-            "parkScore": 50,
-            "nightlifeScore": 50,
-            "quietnessScore": 50,
-        }
-    return LifestyleAnalysis(**scores)

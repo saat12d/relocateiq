@@ -2,6 +2,12 @@ import { expect, type Page, test } from "@playwright/test";
 
 const AUTH_TOKEN_KEY = "relocateiq.authToken";
 
+// [GenAI Use] Prompt: "Role: frontend test engineer experienced with Playwright and React/Vite.
+// Context: RelocateIQ has public homepage/login/signup routes and protected dashboard/saved-scenarios routes. 
+// Task: create a small Playwright test baseline that verifies the main pages render and auth guards work. 
+// Criteria: do not require a live backend, mock protected API responses, use accessible locators, 
+// and keep the tests easy for teammates to extend."
+// [GenAI Use] LLM Response Start
 async function mockSignedInUser(page: Page) {
   await page.addInitScript(
     ({ key }) => window.localStorage.setItem(key, "e2e-test-token"),
@@ -107,3 +113,7 @@ test.describe("protected routes", () => {
     await expect(page.getByText("No saved scenarios found")).toBeVisible();
   });
 });
+// [GenAI Use] LLM Response End
+// [GenAI Use] Reflection: We used the generated suite as a baseline, 
+// then manually adjusted API mocks to match any backend host, 
+// fixed strict locator issues and verified it too.
