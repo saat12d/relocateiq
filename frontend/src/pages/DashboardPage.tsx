@@ -238,6 +238,25 @@ function DashboardPage() {
     };
   }, [runExplain, searchParams]);
 
+  // [GenAI Use] Prompt: "How to read URL search parameters on component mount in React Router to automatically trigger an API call, and then clear the URL parameters?"
+  // [GenAI Use] LLM Response Start
+  useEffect(() => {
+    const incomingWorkplace = searchParams.get("workplace");
+    const incomingRadius = searchParams.get("radius");
+
+    if (incomingWorkplace && !searchParams.get("scenarioId")) {
+      const parsedRadius = incomingRadius ? Number(incomingRadius) : 15;
+
+      runSearch(incomingWorkplace, parsedRadius, departureMinutes);
+
+      navigate("/dashboard", { replace: true });
+    }
+  }, [searchParams, navigate]);
+  // [GenAI Use] LLM Response End
+  // [Genai Use] Reflection: the code provided a useEffect block to catch the routing
+  // params. I reviewed the depency arrow so it won't cause any infinite rerenders and
+  // confirmed it passed the data properly into the existing run search function.
+
   function handleCreateSearch(workAddress: string, searchRadius: number) {
     return runSearch(workAddress, searchRadius, departureMinutes);
   }
