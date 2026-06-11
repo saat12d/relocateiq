@@ -27,31 +27,29 @@ to that layer, which makes diagnosis fast.
 
 ## Setup and teardown procedures
 
-**Backend security tests** (`test_security.py`) require no setup — the
-functions under test are pure (no database, no network). A `JWT_SECRET`
-environment variable is provided by the test fixtures so the security module
-can sign and verify tokens.
+### Backend auth fixtures — `tests/auth/conftest.py`
+File: `https://github.com/saat12d/relocateiq/blob/05630ab3513617bafd3528a69cc2a52c085e5797/backend/tests/auth/conftest.py`
 
-**Backend service and endpoint tests** share fixtures defined in
-`backend/tests/auth/conftest.py` (`https://github.com/saat12d/relocateiq/blob/05630ab3513617bafd3528a69cc2a52c085e5797/backend/tests/auth/conftest.py`):
-
-- **Setup:** Each test gets a *fresh in-memory SQLite database*. A new engine
-  is created, all tables are built from the SQLAlchemy models
-  (`Base.metadata.create_all`), and a session is provided via the `db_session`
-  fixture. For endpoint tests, the `client` fixture additionally overrides the
-  app's `get_db` dependency so the API uses this in-memory database instead of
-  Postgres, and wraps the app in an `httpx.AsyncClient` (ASGI transport) so
-  tests can issue real HTTP-style requests without a running server.
-- **Teardown:** After each test the session is closed, all tables are dropped,
-  and the engine is disposed. The dependency override is cleared so it never
-  leaks into other tests.
-
-This design is a deliberate testability choice. Using an isolated in-memory
-database gives full **controllability** (each test defines its own starting
-state) and guarantees the tests never touch the real Postgres development
-data. Overriding `get_db` is an application of the **test double** pattern: the
-real database dependency is replaced with a controlled substitute. The
-frontend tests apply the same idea by mocking the global `fetch` function.
+- **Setup:** Each test receives a fresh in-memory SQLite database. A new
+  engine is created, all tables are built from `Base.metadata.create_all`,
+  and a session is provided via the `db_session` fixture. The `client`
+  fixture overrides the app's `get_db` dependency to use this session and
+  wraps the app in an `httpx.AsyncClient` (ASGI transport).
+- **Teardown:** Session closed, all tables dropped, engine disposed. The
+  dependency override is cleared so it cannot leak into other test files.
+### Backend scenario/listings fixtures — `tests/conftest.py` 
+File: `https://github.com/saat12d/relocateiq/blob/b41573750f778dcc409084154e8275638710cb5b/backend/tests/conftest.py`
+ 
+- **Setup:** Provides an `authenticated_client` fixture: signs up a real
+  user via the auth endpoint (using an in-memory SQLite override of
+  `get_db`), attaches their JWT to the client headers, and pins scenario
+  persistence to the in-memory store by setting `scenario_store._DB_READY = False`.
+- **Teardown:** Dependency override cleared; in-memory scenario store reset.
+### Service-level unit tests (Google Maps, recommendation engine, AI, RentCast)
+ 
+No shared fixtures. External HTTP calls are intercepted by `respx` (async)
+or `unittest.mock.patch` (sync). OpenAI is replaced with `monkeypatch`
+stubs. No real API calls are ever made; these suites are fully hermetic.
 
 ---
 
