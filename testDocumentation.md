@@ -382,6 +382,7 @@ an in-memory database so a running Postgres instance is not needed for them.
 
 Frontend (from `frontend/`):
 ```bash
+npm install
 npm test                  # runs the frontend test suite
 ```
 
