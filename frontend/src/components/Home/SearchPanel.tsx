@@ -5,10 +5,10 @@ import React, { ChangeEvent, useState } from "react";
 import { useNavigate, createSearchParams } from "react-router-dom";
 import "./Home.css";
 
-// [GenAI Use] Prompt: "Role: React frontend engineer. 
-// Context: The homepage radius slider should match the dashboard-supported radius options. 
-// Task: change the radius control from a continuous 1-50 mile slider to preset values 
-// of 5, 10, 15, 25, and 50 miles. 
+// [GenAI Use] Prompt: "Role: React frontend engineer.
+// Context: The homepage radius slider should match the dashboard-supported radius options.
+// Task: change the radius control from a continuous 1-50 mile slider to preset values
+// of 5, 10, 15, 25, and 50 miles.
 // Criteria: keep 15 miles as the default and keep the displayed label in sync with the selected preset."
 // [GenAI Use] LLM Response Start
 const radiusOptions = [5, 10, 15, 25, 50];
@@ -16,10 +16,9 @@ const defaultRadiusIndex = 2;
 
 export default function SearchPanel() {
   const [radiusIndex, setRadiusIndex] = useState(defaultRadiusIndex);
-  const navigate = useNavigate();
   const radius = radiusOptions[radiusIndex];
   // [GenAI Use] LLM Response End
-  // [GenAI Use] Reflection: We kept the preset approach because it matches dashboard/backend-supported 
+  // [GenAI Use] Reflection: We kept the preset approach because it matches dashboard/backend-supported
   // radius choices and avoids having the continuous radius slider produce unsupported values the dashboard doesn't use.
 
   const [workplace, setWorkplace] = useState("");
